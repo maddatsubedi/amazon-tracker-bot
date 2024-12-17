@@ -2,8 +2,6 @@ const { Events } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
 
-// console.log(musicCommandFiles);
-
 module.exports = {
 	name: Events.InteractionCreate,
 	async execute(interaction) {

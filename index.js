@@ -37,41 +37,44 @@ const commandFolders = fs.readdirSync(foldersPath);
 
 for (const folder of commandFolders) {
 	const commandsPath = path.join(foldersPath, folder);
-	// console.log(commandsPath);
-	const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-	for (const file of commandFiles) {
-		const filePath = path.join(commandsPath, file);
-		const command = require(filePath);
-		if ('data' in command && 'execute' in command) {
-			client.commands.set(command.data.name, command);
-		} else {
-			console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+	const commandSubfolders = fs.readdirSync(commandsPath);
+
+	for (const subfolder of commandSubfolders) {
+		const commandFiles = fs.readdirSync(path.join(commandsPath, subfolder)).filter(file => file.endsWith('.js'));
+		for (const file of commandFiles) {
+			const filePath = path.join(commandsPath, subfolder, file);
+			const command = require(filePath);
+			console.log(command);
+			if ('data' in command && 'execute' in command) {
+				client.commands.set(command.data.name, command);
+			} else {
+				console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+			}
 		}
 	}
 }
 
 
 const eventsPath = path.join(__dirname, 'events');
-const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js'));
-// console.log(eventFiles);
-
+const eventFolders = fs.readdirSync(eventsPath);
 
 (async () => {
-
 	try {
-		
-		for (const file of eventFiles) {
-			const filePath = path.join(eventsPath, file);
-			const event = await require(filePath);
-			// console.log(event);
-			// console.log(filePath);
-			if (event.once) {
-				client.once(event.name, (...args) => event.execute(...args));
-			} else {
-				client.on(event.name, (...args) => event.execute(...args));
+		for (const folder of eventFolders) {
+			const eventFiles = fs.readdirSync(path.join(eventsPath, folder)).filter(file => file.endsWith('.js'));
+
+			for (const file of eventFiles) {
+				const filePath = path.join(eventsPath, folder, file);
+				const event = require(filePath);
+				if (event.once) {
+					client.once(event.name, (...args) => event.execute(...args));
+				} else {
+					client.on(event.name, (...args) => event.execute(...args));
+				}
 			}
 		}
 
+		// After all events are set up, log in the client
 		await client.login(token);
 
 	} catch (error) {

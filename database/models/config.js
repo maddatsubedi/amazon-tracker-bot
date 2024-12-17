@@ -28,8 +28,21 @@ const getAllConfigs = () => {
     return db.prepare('SELECT * FROM config').all();
 };
 
+const deleteConfig = (key) => {
+    createConfigTable();
+    const result = db.prepare('DELETE FROM config WHERE key = ?').run(key);
+    return result.changes > 0;
+};
+
+const resetConfig = () => {
+    createConfigTable();
+    db.prepare('DELETE FROM config').run();
+};
+
 module.exports = {
     setConfig,
     getConfig,
     getAllConfigs,
+    deleteConfig,
+    resetConfig,
 };

@@ -25,7 +25,7 @@ module.exports = {
 			} else if ('run' in command) {
 				await command.run(interaction);
 			} else {
-				console.log("Error running command")
+				console.log("Error running command");
 			}
 		} catch (error) {
 			console.error(`Error executing ${interaction.commandName}`);

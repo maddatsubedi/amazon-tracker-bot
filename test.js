@@ -1,11 +1,3 @@
-function checkRole(member, roleId) {
-    return member.roles.cache.has(roleId);
-}
-
-function checkRolesFromList(member, roleIds) {
-    return roleIds.some(roleId => member.roles.cache.has(roleId));
-}
-
 const validateRange = (range) => {
     const rangeRegex = /^(?:[1-9][0-9]?|100)-(?:[1-9][0-9]?|100)$/;
     
@@ -24,4 +16,4 @@ const validateRange = (range) => {
     }
 };
 
-module.exports = { checkRole, checkRolesFromList, validateRange};
+console.log(validateRange('20-30'));

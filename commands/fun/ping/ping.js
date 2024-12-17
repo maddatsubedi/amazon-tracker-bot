@@ -1,12 +1,14 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { getConfig, setConfig } = require('../../../database/models/config');
+const { getConfig, setConfig, getAllConfigs } = require('../../../database/models/config');
+const {setRange, getAllRanges} = require('../../../database/models/discount_range');
 
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('ping')
 		.setDescription('Replies with Pong!'),
 	async execute(interaction) {
-		// await interaction.reply(`Prefix is ${getConfig('prefix')}`);
+		console.log(getAllConfigs());
+		console.log(getAllRanges());
 		return await interaction.reply('Pong!');
 	},
 };

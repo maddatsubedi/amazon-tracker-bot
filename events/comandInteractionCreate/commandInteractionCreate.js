@@ -1,8 +1,9 @@
 const { Events } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
-
-// console.log(musicCommandFiles);
+const { checkRole } = require('../../utils/functions');
+const { getConfig } = require('../../database/models/config');
+const { simpleEmbed } = require('../../embeds/generalEmbeds');
 
 module.exports = {
 	name: Events.InteractionCreate,
@@ -11,12 +12,19 @@ module.exports = {
 		if (!interaction.isChatInputCommand()) {
 			return;
 		}
-		
+
 		const command = interaction.client.commands.get(interaction.commandName);
 
 		if (!command) {
 			console.error(`No command matching ${interaction.commandName} was found.`);
 			return;
+		}
+
+		const adminRoleID = getConfig('adminRoleID');
+		const errorEmbed = simpleEmbed({description: '❌ You do not have permission to run this command', color: 'Red' });
+
+		if (command.isAdmin && !checkRole(interaction.member, adminRoleID)) {
+			return await interaction.reply({embeds: [errorEmbed]});
 		}
 
 		try {

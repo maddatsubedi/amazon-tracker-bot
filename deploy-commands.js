@@ -7,30 +7,25 @@ const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
 
 const commands = [];
-let musicCommands = [];
 
 for (const folder of commandFolders) {
 	const commandsPath = path.join(foldersPath, folder);
-	const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+	const commandSubfolders = fs.readdirSync(commandsPath);
+
 	// Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
-	// console.log(folder);
-	for (const file of commandFiles) {
-		// console.log(file);
-		if (file == "help.js") {
-			const command = require(`./commands/utility/${file}`);
-			musicCommands.push(command);
-			continue;
-		}
-		const filePath = path.join(commandsPath, file);
-		const command = require(filePath);
-		if ('data' in command && 'execute' in command) {
-			commands.push(command.data.toJSON());
-		} else {
-			console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+	for (const subfolder of commandSubfolders) {
+		const commandFiles = fs.readdirSync(path.join(commandsPath, subfolder)).filter(file => file.endsWith('.js'));
+		for (const file of commandFiles) {
+			const filePath = path.join(commandsPath, subfolder, file);
+			const command = require(filePath);
+			if ('data' in command && 'execute' in command) {
+				commands.push(command.data.toJSON());
+			} else {
+				console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+			}
 		}
 	}
 }
-
 
 const rest = new REST().setToken(token);
 

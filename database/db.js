@@ -7,7 +7,7 @@ if (!fs.existsSync(storageDir)) {
     fs.mkdirSync(storageDir);
 }
 
-const dbPath = path.join(storageDir, 'config.db');
+const dbPath = path.join(storageDir, 'storage.db');
 
 const db = new Database(dbPath);
 

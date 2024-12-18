@@ -20,7 +20,7 @@ module.exports = {
 
         setConfig('adminRoleID', roleID);
 
-        const embed = simpleEmbed({ footer: "Config", title: 'Admin changed', color: 'Random', setFooterImage: true }).addFields(
+        const embed = simpleEmbed({ footer: "Config", title: 'Admin Role Changed', color: 'Random', }).addFields(
             { name: 'New Admin Role', value: `> <@&${roleID}>` , inline: true },
         );
 

@@ -1,7 +1,7 @@
 const { Events } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
-const { checkRole } = require('../../utils/functions');
+const { checkRole } = require('../../utils/helpers');
 const { getConfig } = require('../../database/models/config');
 const { simpleEmbed } = require('../../embeds/generalEmbeds');
 
@@ -21,7 +21,7 @@ module.exports = {
 		}
 
 		const adminRoleID = getConfig('adminRoleID');
-		const errorEmbed = simpleEmbed({description: '❌ You do not have permission to run this command', color: 'Red' });
+		const errorEmbed = simpleEmbed({description: '❌ \u200b You do not have permission to run this command', color: 'Red' });
 
 		if (command.isAdmin && !checkRole(interaction.member, adminRoleID)) {
 			return await interaction.reply({embeds: [errorEmbed]});

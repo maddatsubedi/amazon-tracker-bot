@@ -1,0 +1,44 @@
+{
+    "domain" : {
+        "1": {
+            "locale": "com",
+            "currency": "$"
+        },
+        "2": {
+            "locale": "co.uk",
+            "currency": "£"
+        },
+        "3": {
+            "locale": "de",
+            "currency": "€"
+        },
+        "4": {
+            "locale": "fr",
+            "currency": "€"
+        },
+        "5": {
+            "locale": "co.jp",
+            "currency": "¥"
+        },
+        "6": {
+            "locale": "ca",
+            "currency": "$"
+        },
+        "8": {
+            "locale": "it",
+            "currency": "€"
+        },
+        "9": {
+            "locale": "es",
+            "currency": "€"
+        },
+        "11": {
+            "locale": "com.mx",
+            "currency": "$"
+        },
+        "12": {
+            "locale": "com.br",
+            "currency": "R$"
+        }
+    }
+}

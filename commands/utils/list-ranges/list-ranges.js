@@ -45,8 +45,7 @@ module.exports = {
 
             let descriptionContent = '';
             paginatedRanges.forEach(({ range, channelID, roleID }) => {
-                descriptionContent +=
-                    `\n> **Range**: \`${range}\`\n> **Channel**: <#${channelID}>\n> **Role**: <@&${roleID}>\n`;
+                descriptionContent += `\n> **Range**: \`${range}\`\n> **Channel**: <#${channelID}>\n> **Role**: <@&${roleID}>\n`;
             });
 
             const embed = new EmbedBuilder()
@@ -71,17 +70,17 @@ module.exports = {
                     .setCustomId('prev_page')
                     .setLabel('⬅️ Previous')
                     .setStyle(ButtonStyle.Primary)
-                    .setDisabled(page === 0), // Disable if on the first page
+                    .setDisabled(page === 0),
                 new ButtonBuilder()
                     .setCustomId('pagination_info')
                     .setLabel(`Page ${page + 1} / ${totalPages}`)
                     .setStyle(ButtonStyle.Secondary)
-                    .setDisabled(true), // Pagination button is just for display
+                    .setDisabled(true),
                 new ButtonBuilder()
                     .setCustomId('next_page')
                     .setLabel('Next ➡️')
                     .setStyle(ButtonStyle.Primary)
-                    .setDisabled(page === totalPages - 1) // Disable if on the last page
+                    .setDisabled(page === totalPages - 1)
             );
             return actionRow;
         };
@@ -97,7 +96,7 @@ module.exports = {
 
         const collector = message.createMessageComponentCollector({
             filter: (btnInteraction) => btnInteraction.user.id === interaction.user.id,
-            time: 60000, // 1-minute timeout
+            time: 60000, // 1 minute
         });
 
         collector.on('collect', async (btnInteraction) => {
@@ -117,7 +116,7 @@ module.exports = {
         });
 
         collector.on('end', () => {
-            message.edit({ components: [] }); // Disable buttons after timeout
+            message.edit({ components: [] }); // Remove all buttons after collector ends
         });
     },
 };

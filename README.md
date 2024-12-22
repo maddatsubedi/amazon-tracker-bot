@@ -1,3 +1,3 @@
 <h1 align=center>
-Discord Utility Bot
+Amazon Tracker Bot
 </h1>

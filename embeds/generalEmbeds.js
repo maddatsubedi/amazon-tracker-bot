@@ -1,4 +1,5 @@
 const { EmbedBuilder } = require('discord.js');
+const { getAvailabeLocales } = require('../utils/helpers');
 
 const simpleEmbed = ({ title, color, description, setTimestamp, footer, setFooterImage }) => {
 	const embed = new EmbedBuilder()
@@ -12,7 +13,19 @@ const simpleEmbed = ({ title, color, description, setTimestamp, footer, setFoote
 	return embed;
 }
 
+const availableLocales = getAvailabeLocales();
+
+const localesString = availableLocales?.map(locale => `\`${locale}\``).join(`\n`);
+
+const localesEmbed = (title) => {
+	const embed = simpleEmbed({
+		description: `${title ? `${title}\n\n` : ``}**Following domains are supported:**\n\n>>> **${localesString}**`, color: 'Red'
+	});
+
+	return embed;
+}
 
 module.exports = {
 	simpleEmbed,
+	localesEmbed,
 };

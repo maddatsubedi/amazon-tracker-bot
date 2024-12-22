@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionsBitField, ChannelType, PermissionFlagsBits } = require('discord.js');
 const { simpleEmbed } = require('../../../embeds/generalEmbeds');
 const { setRange, getChannelAndRole, deleteRange } = require('../../../database/models/discount_range');
-const { validateRange } = require('../../../utils/functions');
+const { validateRange } = require('../../../utils/helpers');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -20,10 +20,7 @@ module.exports = {
 
         if (!isValidRange.valid) {
             const errorEmbed = simpleEmbed({
-                description: `**❌ The range is not valid**
-                
-                >>> Please give range in this format: \`xx-xx\`
-                for e.g. \`10-20\`, \`50-60\``, color: 'Red'
+                description: `**❌ \u200b The range is not valid**\n\n>>> Please give range in this format: \`xx-xx\`\nfor e.g. \`10-20\`, \`50-60\``, color: 'Red'
             });
             return await interaction.reply({ embeds: [errorEmbed] });
         }
@@ -33,7 +30,7 @@ module.exports = {
         if (!existingRange) {
             const errorEmbed = simpleEmbed(
                 {
-                    description: `❌ **The range \`${range}\` does not exist**`,
+                    description: `❌ \u200b **The range \`${range}\` does not exist**`,
                     color: 'Red',
                 }
             )

@@ -1,6 +1,6 @@
+const { getAvailabeLocales } = require('../../utils/helpers');
 const db = require('../db');
 
-// Create the 'brands' table with a 'domains' column
 const createBrandsTable = () => {
     db.prepare(`
         CREATE TABLE IF NOT EXISTS brands (
@@ -11,7 +11,6 @@ const createBrandsTable = () => {
     `).run();
 };
 
-// Create the 'asins' table with a 'last_price_updated' field
 const createAsinsTable = () => {
     db.prepare(`
         CREATE TABLE IF NOT EXISTS asins (
@@ -24,15 +23,13 @@ const createAsinsTable = () => {
     `).run();
 };
 
-// Insert a brand and optionally associate domains
 const insertBrand = (brandName, domains = '') => {
     createBrandsTable();
     const stmt = db.prepare('INSERT OR IGNORE INTO brands (name, domains) VALUES (?, ?)');
     stmt.run(brandName, domains);
-    return db.prepare('SELECT id FROM brands WHERE name = ?').get(brandName);
+    return db.prepare('SELECT id, domains FROM brands WHERE name = ?').get(brandName);
 };
 
-// Add a domain to a brand
 const addDomainToBrand = (brandName, domain) => {
     createBrandsTable();
     createAsinsTable();
@@ -48,13 +45,14 @@ const addDomainToBrand = (brandName, domain) => {
     }
 };
 
-// Insert ASINs and associate them with a brand, also set the last_price_updated field
 const insertAsins = (brandName, asins) => {
     createBrandsTable();
     createAsinsTable();
 
     const brand = insertBrand(brandName);
     const duplicateAsins = [];
+    const errorAsins = [];
+    const successfulAsins = [];
     const stmt = db.prepare(`
         INSERT OR IGNORE INTO asins (asin, brand_id, last_price_updated) VALUES (?, ?, ?)
     `);
@@ -66,16 +64,28 @@ const insertAsins = (brandName, asins) => {
             const result = stmt.run(asin, brand.id, currentDate);
             if (result.changes === 0) {
                 duplicateAsins.push(asin);
+            } else {
+                successfulAsins.push(asin);
             }
         } catch (error) {
             console.error('Error inserting ASIN:', asin, error);
+            errorAsins.push({ asin, error: error.message });
         }
     });
 
-    return duplicateAsins;
+    const success = successfulAsins.length > 0;
+
+    const totalAsinsCount = db.prepare('SELECT COUNT(*) as count FROM asins').get().count;
+
+    return {
+        success,
+        successfulAsinsCount: successfulAsins.length,
+        duplicateAsinsCount: duplicateAsins.length,
+        errorAsinsCount: errorAsins.length,
+        totalAsinsCount,
+    };
 };
 
-// Update tracking status for an ASIN
 const updateTrackingStatus = (asin, tracking) => {
     createAsinsTable();
     db.prepare(`
@@ -83,7 +93,6 @@ const updateTrackingStatus = (asin, tracking) => {
     `).run(tracking ? 1 : 0, asin);
 };
 
-// Update the last price update date when the price of the ASIN changes
 const updatePriceLastUpdated = (asin) => {
     createAsinsTable();
     const currentDate = new Date().toISOString(); // Get current date in ISO string format
@@ -92,7 +101,6 @@ const updatePriceLastUpdated = (asin) => {
     `).run(currentDate, asin);
 };
 
-// Set tracking status for all ASINs of a specific brand
 const setTrackingForBrand = (brandName, tracking) => {
     createBrandsTable();
     createAsinsTable();
@@ -106,7 +114,6 @@ const setTrackingForBrand = (brandName, tracking) => {
     }
 };
 
-// Get ASINs for a specific brand
 const getAsinsForBrand = (brandName) => {
     createAsinsTable();
     createBrandsTable();
@@ -117,20 +124,17 @@ const getAsinsForBrand = (brandName) => {
     return [];
 };
 
-// Get all brands with their domains
 const getAllBrands = () => {
     createBrandsTable();
     return db.prepare('SELECT * FROM brands').all();
 };
 
-// Check if a brand exists
 const brandExists = (brandName) => {
     createBrandsTable();
     const brand = db.prepare('SELECT id FROM brands WHERE name = ?').get(brandName);
     return !!brand; // Returns true if the brand exists, otherwise false
 };
 
-// Delete a brand and its associated ASINs
 const deleteBrandAndAsins = (brandName) => {
     createBrandsTable();
     createAsinsTable();
@@ -140,6 +144,12 @@ const deleteBrandAndAsins = (brandName) => {
         db.prepare('DELETE FROM asins WHERE brand_id = ?').run(brand.id);
         db.prepare('DELETE FROM brands WHERE id = ?').run(brand.id);
     }
+};
+
+const getBrandDomains = async (brandName) => {
+    createBrandsTable();
+    const brand = db.prepare('SELECT domains FROM brands WHERE name = ?').get(brandName);
+    return brand ? brand.domains.split(',').filter(Boolean) : [];
 };
 
 module.exports = {
@@ -154,5 +164,6 @@ module.exports = {
     getAsinsForBrand,
     getAllBrands,
     brandExists,
-    deleteBrandAndAsins
+    deleteBrandAndAsins,
+    getBrandDomains,
 };

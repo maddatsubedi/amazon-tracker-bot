@@ -2,7 +2,7 @@ const { SlashCommandBuilder } = require('discord.js');
 const { getConfig, setConfig, getAllConfigs } = require('../../../database/models/config');
 const { setRange, updateRange, getAllRanges, deleteRange } = require('../../../database/models/discount_range');
 const db = require('../../../database/db');
-const { getProductDetails, getProducts } = require('../../../utils/keepaApis');
+const { getProductDetails, addProducts } = require('../../../utils/keepaApis');
 const { getProductsFromStore } = require('../../../utils/rainforestApis');
 const { insertBrand } = require('../../../database/models/asins');
 
@@ -18,9 +18,9 @@ module.exports = {
 		// deleteRange('1-2');
 		// const product = await getProductDetails({asin: 'B07682XJLF'});
 		// console.log(product);
-		const products = await getProducts({});
+		// const products = await addProducts({});
 		// await insertBrand('adsf', 'dfs,fds');
-		products && console.log(products);
+		// products && console.log(products);
 		// console.log(products);
 		return await interaction.editReply('Pong!');
 	},

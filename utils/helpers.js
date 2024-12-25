@@ -125,6 +125,10 @@ function getAvailabeLocales() {
     return getDomainLocales(domain);
 }
 
+function getAvailabeDomainIds() {
+    return Object.keys(domain);
+}
+
 function getDomainLocaleByDomainID(domainID) {
     return domain[domainID]?.locale;
 }
@@ -164,7 +168,96 @@ function validateAvailableLocales(localesArray) {
     return validateLocales(localesArray, domain);
 }
 
-// Create a function that checks if the locales are valid
+function getRefillTime (tokensLeft, refillIn, refillRate) {
+    const refillTime = new Date();
+    refillTime.setSeconds(refillTime.getSeconds() + refillIn + (tokensLeft / refillRate));
+    return refillTime;
+}
+
+function calculateTokensRefillTime(refillRate, refillIn, tokensLeft, tokensRequired) {
+    const targetTokens = tokensRequired;
+    
+    if (tokensLeft >= targetTokens) {
+        return "0 sec";
+    }
+
+    const refillInterval = 60000;
+    let timeLeft = 0;
+    
+    function formatTime(ms) {
+        let seconds = Math.floor(ms / 1000);
+        let minutes = Math.floor(seconds / 60);
+        let hours = Math.floor(minutes / 60);
+        seconds = seconds % 60;
+        minutes = minutes % 60;
+
+        let timeString = '';
+        if (hours > 0) timeString += `${hours} hr : `;
+        if (minutes > 0 || hours > 0) timeString += `${minutes} min : `;
+        timeString += `${seconds} sec`;
+
+        return timeString.trim();
+    }
+
+    if (tokensLeft < targetTokens) {
+        let firstRefillTime = refillIn;
+        tokensLeft += refillRate;
+        if (tokensLeft >= targetTokens) {
+            return formatTime(firstRefillTime);
+        }
+        timeLeft += firstRefillTime;
+    }
+
+    while (tokensLeft < targetTokens) {
+        tokensLeft += refillRate;
+        timeLeft += refillInterval;
+    }
+
+    return formatTime(timeLeft);
+}
+
+function processDomainData(domains) {
+    const result = {};
+    const productsSet = new Set();
+    let previousNumberOfProducts = 0;
+
+    const MAX_PRODUCTS_PER_DOMAIN = 2500; // Maximum products to take from each domain
+
+    domains.forEach(domain => {
+        const { domainID, data } = domain;
+
+        if (data.success) {
+            result.successDomains = result.successDomains || [];
+            result.successDomains.push(domainID);
+
+            // Get up to MAX_PRODUCTS_PER_DOMAIN products from this domain
+            const limitedProducts = data.products.slice(0, MAX_PRODUCTS_PER_DOMAIN);
+            limitedProducts.forEach(asin => productsSet.add(asin));
+
+            // Track the total number of products processed
+            previousNumberOfProducts += limitedProducts.length;
+        } else if (data.error) {
+            result.errorDomains = result.errorDomains || [];
+            result.errorDomains.push(domainID);
+        }
+    });
+
+    result.products = Array.from(productsSet);
+    result.numberOfProducts = productsSet.size;
+    result.previousNumberOfProducts = previousNumberOfProducts;
+    result.optimization = previousNumberOfProducts - result.numberOfProducts;
+
+    return result;
+}
+
+function getKeepaTimeMinutes(daysAgo) {
+    const KEEPATIME_OFFSET = 21564000;
+    const MS_IN_A_MINUTE = 60000
+    const now = Date.now();
+    const targetTime = now - daysAgo * 24 * 60 * 60 * 1000;
+    const keepaTime = Math.floor(targetTime / MS_IN_A_MINUTE) - KEEPATIME_OFFSET;
+    return keepaTime;
+}
 
 module.exports = {
     checkRole,
@@ -181,5 +274,10 @@ module.exports = {
     getAvailabeLocales,
     getDomainLocaleByDomainID,
     validateLocales,
-    validateAvailableLocales
+    validateAvailableLocales,
+    getAvailabeDomainIds,
+    getRefillTime,
+    calculateTokensRefillTime,
+    processDomainData,
+    getKeepaTimeMinutes
 };

@@ -1,8 +1,8 @@
 const axios = require('axios');
 const { keepaAPIKey } = require('../config.json');
-const { getLastPriceAndTimestamp, formatPrice, formatKeepaDate } = require('./helpers');
+const { getLastPriceAndTimestamp, formatPrice, formatKeepaDate, getDomainIDByLocale, getAvailabeDomainIds, getDomainLocaleByDomainID, processDomainData, getKeepaTimeMinutes } = require('./helpers');
 const { domain: keepaDomain } = require('./keepa.json');
-const { insertAsins } = require('../database/models/asins');
+const { insertAsins, brandExists, getBrandDomains } = require('../database/models/asins');
 
 const IMAGE_BASE_URL = 'https://images-na.ssl-images-amazon.com/images/I/';
 
@@ -149,67 +149,214 @@ const getProductGraphBuffer = async ({ asin, domain = 1 }) => {
 
 };
 
-const getProducts = async({domain = 1}) => {
-    // if (!domain) {
-    //     return {
-    //         error: true,
-    //         errorType: 'InvalidInput',
-    //         message: 'Domain is required'
-    //     }
-    // }
+const addProducts = async ({ brand }) => {
 
-    const query = {
-        title: 'Ralph Lauren',
-        // brand: 'adidas',
-        perPage: 10000,
-    }
+    const PER_PAGE = 3000;
 
-    const url = `https://api.keepa.com/query?key=${keepaAPIKey}&domain=${domain}&selection=${JSON.stringify(query)}`;
-
-    try {
-
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-            return {
-                error: true,
-                errorType: 'APIError',
-                message: 'Error fetching product data'
-            }
-        }
-
-        const data = await response.json();
-
-        if (!data.asinList || data.asinList.length === 0) {
-            return {
-                error: true,
-                errorType: 'PRODUCT_NOT_FOUND',
-                message: 'No products found'
-            }
-        }
-
-        const products = data.asinList;
-        const numberOfProducts = data.asinList.length;
-
-        console.log(data);
-        console.log(numberOfProducts);
-        console.log(products.slice(-50));
-
-        // const result = insertAsins('ralph lauren', products);
-        // console.log(result);
-
-    } catch (error) {
-        console.log(error);
+    if (!brand) {
         return {
             error: true,
-            errorType: 'ExceptionError',
+            errorType: 'InvalidInput',
+            message: 'Brand is required'
+        }
+    }
+
+    const checkBrandExists = await brandExists(brand);
+
+    if (!checkBrandExists) {
+        return {
+            error: true,
+            errorType: 'BRAND_NOT_FOUND',
+            message: 'Brand does not exist'
+        }
+    }
+
+    const brandDomainsDB = await getBrandDomains(brand);
+    const brandDomains = brandDomainsDB.includes('all') ? getAvailabeDomainIds() : brandDomainsDB.map(domain => getDomainIDByLocale(domain));
+
+    const url = `https://api.keepa.com/query?key=${keepaAPIKey}`;
+    const response = await fetch(url);
+
+    const data = await response?.json();
+
+    if (!data || !data.timestamp) {
+        return {
+            error: true,
+            errorType: 'APIError',
             message: 'Error fetching product data'
         }
     }
+
+    const tokensLeft = data.tokensLeft;
+    const refillIn = data.refillIn;
+    const refillRate = data.refillRate;
+
+    const tokensRequired = (10 + (1/100) * PER_PAGE) * brandDomains.length;
+
+    if (tokensLeft < tokensRequired) {
+        return {
+            error: true,
+            errorType: 'LIMIT_REACHED',
+            message: 'API limit reached',
+            data: {
+                tokensLeft,
+                refillIn,
+                refillRate,
+                tokensRequired
+            }
+        }
+    }
+
+    const finalProducts = [];
+
+    for (const domainID of brandDomains) {
+        const query = {
+            title: brand,
+            perPage: PER_PAGE,
+            singleVariation: true,
+            lastPriceChange_gte: getKeepaTimeMinutes(30)
+        }
+
+        const url = `https://api.keepa.com/query?key=${keepaAPIKey}&domain=${domainID}&selection=${JSON.stringify(query)}`;
+
+        try {
+
+            // console.log(getDomainLocaleByDomainID(domainID));
+            // continue;
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                finalProducts.push({
+                    domainID: domainID,
+                    data: {
+                        error: true,
+                        errorType: 'APIError',
+                        message: 'Error fetching product data'
+                    }
+                });
+                continue;
+            }
+
+            const data = await response.json();
+
+            if (!data.asinList || data.asinList.length === 0) {
+                finalProducts.push({
+                    domainID: domainID,
+                    data: {
+                        error: true,
+                        errorType: 'PRODUCTS_NOT_FOUND',
+                        message: 'No products found'
+                    }
+                });
+                break;
+                // continue;
+            }
+
+            const products = data.asinList;
+            const numberOfProducts = data.asinList.length;
+            const totalResults = data.totalResults;
+            // console.log(data);
+
+            finalProducts.push({
+                domainID: domainID,
+                data: {
+                    success: true,
+                    totalResults,
+                    numberOfProducts,
+                    products
+                }
+            });
+
+        } catch (error) {
+            console.log(error);
+            finalProducts.push({
+                domain: {
+                    id: domainID,
+                    locale: getDomainIDByLocale(domainID)
+                },
+                data: {
+                    error: true,
+                    errorType: 'ExceptionError',
+                    message: 'Error fetching product data'
+                }
+            });
+        }
+    }
+
+    // console.log(finalProducts);
+
+    const processedData = processDomainData(finalProducts);
+
+    if (!processedData.successDomains) {
+        return {
+            error: true,
+            errorType: 'PRODUCTS_NOT_FOUND',
+            message: 'No products found'
+        }
+    }
+
+    const successDomains = processedData.successDomains;
+    const successLocales = successDomains.map(domain => getDomainLocaleByDomainID(domain));
+    const errorDomains = processedData.errorDomains;
+    let errorLocales;
+
+    if (errorDomains) {
+        errorLocales = errorDomains.map(domain => getDomainLocaleByDomainID(domain));
+    }
+
+    const dataCount = processedData.numberOfProducts;
+    const optimization = processedData.optimization;
+    const previousDataCount = processedData.previousNumberOfProducts;
+
+    const result = insertAsins(brand, processedData.products);
+    
+    if (!result) {
+        return {
+            error: true,
+            errorType: 'DB_ERROR',
+            message: 'Error adding products to database'
+        }
+    }
+
+    const brandLocales = brandDomains.map(domain => getDomainLocaleByDomainID(domain));
+
+    const successAsinsCount = result.successfulAsinsCount;
+    const duplicateAsinsCount = result.duplicateAsinsCount;
+    const errorAsinsCount = result.errorAsinsCount;
+    const dbSuccess = result.success;
+    const totalAsinsCount = result.totalAsinsCount;
+
+    const returnData =  {
+        success: true,
+        data: {
+            brand,
+            brandDomains,
+            brandDomainsDB,
+            dataCount,
+            previousDataCount,
+            optimization,
+            dbSuccess,
+            successAsinsCount,
+            duplicateAsinsCount,
+            errorAsinsCount,
+            brandLocales,
+            successDomains,
+            successLocales,
+            totalAsinsCount
+        }
+    }
+
+    if (errorDomains) {
+        returnData.data.errorDomains = errorDomains;
+        returnData.data.errorLocales = errorLocales;
+    }
+
+    return returnData;
+
 }
 
 module.exports = {
     getProductDetails,
     getProductGraphBuffer,
-    getProducts
+    addProducts
 };

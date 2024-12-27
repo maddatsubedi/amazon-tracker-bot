@@ -127,11 +127,8 @@ function getDomainIDs(domain) {
         return getAvailabeDomainIds();
     }
 
-    const domainIDs = [];
+    const domainIDs = Object.keys(domain);
 
-    for (const key in domain) {
-        domainIDs.push(key);
-    }
 
     if (domainIDs.length === 0) {
         return null;

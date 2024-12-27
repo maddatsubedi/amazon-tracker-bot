@@ -121,6 +121,25 @@ function getDomainLocales(domain) {
     return locales;
 }
 
+function getDomainIDs(domain) {
+
+    if (domain.includes('all') && domain.length === 1) {
+        return getAvailabeDomainIds();
+    }
+
+    const domainIDs = [];
+
+    for (const key in domain) {
+        domainIDs.push(key);
+    }
+
+    if (domainIDs.length === 0) {
+        return null;
+    }
+
+    return domainIDs;
+}
+
 function getAvailabeLocales() {
     return getDomainLocales(domain);
 }
@@ -220,6 +239,7 @@ function processDomainData(domains) {
     const result = {};
     const productsSet = new Set();
     let previousNumberOfProducts = 0;
+    let totalNumberOfProducts = 0;
 
     const MAX_PRODUCTS_PER_DOMAIN = 2500; // Maximum products to take from each domain
 
@@ -230,12 +250,12 @@ function processDomainData(domains) {
             result.successDomains = result.successDomains || [];
             result.successDomains.push(domainID);
 
-            // Get up to MAX_PRODUCTS_PER_DOMAIN products from this domain
             const limitedProducts = data.products.slice(0, MAX_PRODUCTS_PER_DOMAIN);
             limitedProducts.forEach(asin => productsSet.add(asin));
 
-            // Track the total number of products processed
             previousNumberOfProducts += limitedProducts.length;
+
+            totalNumberOfProducts += data.products.length;
         } else if (data.error) {
             result.errorDomains = result.errorDomains || [];
             result.errorDomains.push(domainID);
@@ -246,6 +266,7 @@ function processDomainData(domains) {
     result.numberOfProducts = productsSet.size;
     result.previousNumberOfProducts = previousNumberOfProducts;
     result.optimization = previousNumberOfProducts - result.numberOfProducts;
+    result.totalNumberOfProducts = totalNumberOfProducts;
 
     return result;
 }
@@ -279,5 +300,6 @@ module.exports = {
     getRefillTime,
     calculateTokensRefillTime,
     processDomainData,
-    getKeepaTimeMinutes
+    getKeepaTimeMinutes,
+    getDomainIDs
 };

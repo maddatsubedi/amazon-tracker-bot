@@ -17,7 +17,11 @@ module.exports = {
         .addStringOption(option =>
             option.setName('domains')
                 .setDescription('Domains (comma separated) to add products of (use `all` for all domains)')
-                .setRequired(true)),
+                .setRequired(true))
+        .addBooleanOption(option =>
+            option.setName('start-tracking')
+                .setDescription('Start tracking the brand')
+                .setRequired(false)),
     isAdmin: true,
     async execute(interaction) {
 
@@ -26,6 +30,8 @@ module.exports = {
         const brand = interaction.options.getString('brand');
         const domains = interaction.options.getString('domains').toLowerCase().split(',').map(domain => domain.trim());
         const isAllDomain = domains.includes('all') && domains.length === 1;
+        const startTracking = interaction.options.getBoolean('start-tracking');
+        console.log(startTracking);
 
         const isBrandExist = await brandExists(brand);
 
@@ -77,7 +83,7 @@ module.exports = {
         // console.log(domains);
         const domainsString = isAllDomain ? 'all' : domains.join(',');
 
-        await insertBrand(brand, domainsString);
+        await insertBrand(brand, domainsString, startTracking);
 
         const successEmbed = simpleEmbed({
             description: `**✅ \u200b The brand has been added successfully**\n\n> **Brand**: \`${brand}\`\n> **New Domains**: \`${domainsString}\``,

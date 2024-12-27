@@ -1,5 +1,5 @@
 const { getBrandDomains } = require("./database/models/asins");
-const { getKeepaTimeMinutes, getDomainIDs, formatPrice } = require("./utils/helpers");
+const { getKeepaTimeMinutes, getDomainIDs, formatPrice, getDomainLocaleByDomainID } = require("./utils/helpers");
 const { keepaAPIKey } = require('./config.json');
 const { priceTypesMap } = require('./utils/keepa.json');
 
@@ -98,9 +98,9 @@ const fetchProducts = async (brand, priceType) => {
                         avgDay: deal.avg[0][0] <= 0 ? null : formatPrice(deal.avg[0][0], domainId),
                         avgWeek: deal.avg[1][0] <= 0 ? null : formatPrice(deal.avg[1][0], domainId),
                         avgMonth: deal.avg[2][0] <= 0 ? null : formatPrice(deal.avg[2][0], domainId),
-                        percentageDropDay: deal.deltaPercent[0][0] <= 0 ? null : formatPrice(deal.avg[0][1], domainId),
-                        percentageDropWeek: deal.deltaPercent[1][0] <= 0 ? null : formatPrice(deal.avg[1][1], domainId),
-                        percentageDropMonth: deal.deltaPercent[2][0] <= 0 ? null : formatPrice(deal.avg[2][1], domainId),
+                        percentageDropDay: deal.deltaPercent[0][0] <= 0 ? null : deal.deltaPercent[0][0],
+                        percentageDropWeek: deal.deltaPercent[1][0] <= 0 ? null : deal.deltaPercent[1][0],
+                        percentageDropMonth: deal.deltaPercent[2][0] <= 0 ? null : deal.deltaPercent[2][0],
                         dropDay: deal.delta[0][0] <= 0 ? null : formatPrice(deal.delta[0][0], domainId),
                         dropWeek: deal.delta[1][0] <= 0 ? null : formatPrice(deal.delta[1][0], domainId),
                         dropMonth: deal.delta[2][0] <= 0 ? null : formatPrice(deal.delta[2][0], domainId),
@@ -111,9 +111,9 @@ const fetchProducts = async (brand, priceType) => {
                         avgDay: deal.avg[0][1] <= 0 ? null : formatPrice(deal.avg[0][1], domainId),
                         avgWeek: deal.avg[1][1] <= 0 ? null : formatPrice(deal.avg[1][1], domainId),
                         avgMonth: deal.avg[2][1] <= 0 ? null : formatPrice(deal.avg[2][1], domainId),
-                        percentageDropDay: deal.deltaPercent[0][1] <= 0 ? null : formatPrice(deal.avg[0][1], domainId),
-                        percentageDropWeek: deal.deltaPercent[1][1] <= 0 ? null : formatPrice(deal.avg[1][1], domainId),
-                        percentageDropMonth: deal.deltaPercent[2][1] <= 0 ? null : formatPrice(deal.avg[2][1], domainId),
+                        percentageDropDay: deal.deltaPercent[0][1] <= 0 ? null : deal.deltaPercent[0][1],
+                        percentageDropWeek: deal.deltaPercent[1][1] <= 0 ? null : deal.deltaPercent[1][1],
+                        percentageDropMonth: deal.deltaPercent[2][1] <= 0 ? null : deal.deltaPercent[2][1],
                         dropDay: deal.delta[0][1] <= 0 ? null : formatPrice(deal.delta[0][1], domainId),
                         dropWeek: deal.delta[1][1] <= 0 ? null : formatPrice(deal.delta[1][1], domainId),
                         dropMonth: deal.delta[2][1] <= 0 ? null : formatPrice(deal.delta[2][1], domainId),
@@ -124,9 +124,9 @@ const fetchProducts = async (brand, priceType) => {
                         avgDay: deal.avg[0][2] <= 0 ? null : formatPrice(deal.avg[0][2], domainId),
                         avgWeek: deal.avg[1][2] <= 0 ? null : formatPrice(deal.avg[1][2], domainId),
                         avgMonth: deal.avg[2][2] <= 0 ? null : formatPrice(deal.avg[2][2], domainId),
-                        percentageDropDay: deal.deltaPercent[0][2] <= 0 ? null : formatPrice(deal.avg[0][2], domainId),
-                        percentageDropWeek: deal.deltaPercent[1][2] <= 0 ? null : formatPrice(deal.avg[1][2], domainId),
-                        percentageDropMonth: deal.deltaPercent[2][2] <= 0 ? null : formatPrice(deal.avg[2][2], domainId),
+                        percentageDropDay: deal.deltaPercent[0][2] <= 0 ? null : deal.deltaPercent[0][2],
+                        percentageDropWeek: deal.deltaPercent[1][2] <= 0 ? null : deal.deltaPercent[1][2],
+                        percentageDropMonth: deal.deltaPercent[2][2] <= 0 ? null : deal.deltaPercent[2][2],
                         dropDay: deal.delta[0][2] <= 0 ? null : formatPrice(deal.delta[0][2], domainId),
                         dropWeek: deal.delta[1][2] <= 0 ? null : formatPrice(deal.delta[1][2], domainId),
                         dropMonth: deal.delta[2][2] <= 0 ? null : formatPrice(deal.delta[2][2], domainId),
@@ -137,9 +137,9 @@ const fetchProducts = async (brand, priceType) => {
                         avgDay: deal.avg[0][18] <= 0 ? null : formatPrice(deal.avg[0][18], domainId),
                         avgWeek: deal.avg[1][18] <= 0 ? null : formatPrice(deal.avg[1][18], domainId),
                         avgMonth: deal.avg[2][18] <= 0 ? null : formatPrice(deal.avg[2][18], domainId),
-                        percentageDropDay: deal.deltaPercent[0][18] <= 0 ? null : formatPrice(deal.avg[0][18], domainId),
-                        percentageDropWeek: deal.deltaPercent[1][18] <= 0 ? null : formatPrice(deal.avg[1][18], domainId),
-                        percentageDropMonth: deal.deltaPercent[2][18] <= 0 ? null : formatPrice(deal.avg[2][18], domainId),
+                        percentageDropDay: deal.deltaPercent[0][18] <= 0 ? null : deal.deltaPercent[0][18],
+                        percentageDropWeek: deal.deltaPercent[1][18] <= 0 ? null : deal.deltaPercent[1][18],
+                        percentageDropMonth: deal.deltaPercent[2][18] <= 0 ? null : deal.deltaPercent[2][18],
                         dropDay: deal.delta[0][18] <= 0 ? null : formatPrice(deal.delta[0][18], domainId),
                         dropWeek: deal.delta[1][18] <= 0 ? null : formatPrice(deal.delta[1][18], domainId),
                         dropMonth: deal.delta[2][18] <= 0 ? null : formatPrice(deal.delta[2][18], domainId),
@@ -175,7 +175,6 @@ const fetchProducts = async (brand, priceType) => {
             errors: dealsError,
             errorsCount: errorsCount,
         });
-
     }
 
     return {
@@ -195,6 +194,7 @@ const fetchProductsOfAllPricesTypes = async (brand) => {
             priceType: priceType,
             priceTypeName: priceTypesMap[priceType],
             data: data,
+            categories: data.categories,
         });
     }
 
@@ -234,12 +234,27 @@ const processFinalData = (data) => {
         errorCount: {},
         previousNumberOfDeals: 0,
         newNumberOfDeals: 0,
+        categories: {},
     };
 
     const processedASINs = new Set();
 
+    result.previousNumberOfDeals = data.products.reduce((sum, product) => {
+        return sum + product.data.products.reduce((domainSum, domainData) => {
+            return domainSum + domainData.deals.length;
+        }, 0);
+    }, 0);
+
     for (const product of data.products) {
-        const { priceType, priceTypeName, data: priceTypeData } = product;
+        const { priceType, priceTypeName, data: priceTypeData, categories } = product;
+
+        for (const [categoryId, category] of Object.entries(categories)) {
+            if (result.categories[categoryId]) {
+                result.categories[categoryId].count += category.count;
+            } else {
+                result.categories[categoryId] = { ...category };
+            }
+        }
 
         result.count[priceType] = {};
         result.errorCount[priceType] = {};
@@ -247,15 +262,24 @@ const processFinalData = (data) => {
         for (const domainData of priceTypeData.products) {
             const { domainId, deals, errorsCount } = domainData;
 
-            result.count[priceType][domainId] = deals.length;
-            result.previousNumberOfDeals += deals.length;
-
+            result.count[priceType][domainId] = 0;
             result.errorCount[priceType][domainId] = errorsCount;
 
             for (const deal of deals) {
                 if (!processedASINs.has(deal.asin)) {
+                    const dealOf = {
+                        priceType: priceType,
+                        priceTypeName: priceTypeName,
+                        domainId: domainId,
+                        locale: getDomainLocaleByDomainID(domainId),
+                    };
+
+                    deal.dealOf = dealOf;
+
                     result.deals.push(deal);
                     processedASINs.add(deal.asin);
+
+                    result.count[priceType][domainId]++;
                 }
             }
         }
@@ -277,8 +301,11 @@ const processFinalData = (data) => {
 const fetchAndProcessProducts = async (brand) => {
     const data = await fetchProductsOfAllPricesTypes(brand);
     const processedData = processFinalData(data);
-    // console.log(processedData.result.deals[0]);
+    console.log(processedData);
+    console.log(processedData.result.deals[0]);
+    console.log(processedData.result.categories);
+    console.log(processedData.result.count);
     return processedData;
 }
 
-fetchAndProcessProducts('Ralph Lauren');
+fetchAndProcessProducts('adidas');

@@ -217,25 +217,22 @@ const fetchProductsOfAllPricesTypes = async (brand) => {
 
 const processFinalData = (data) => {
     const result = {
-        count: {}, // Tracks deals count by priceType and domainId
-        deals: [], // Consolidated list of unique deals
-        errorCount: {}, // Tracks error count by priceType and domainId
-        previousNumberOfDeals: 0, // Deals count before processing
-        newNumberOfDeals: 0, // New unique deals count
-        categories: {}, // Aggregated categories data
+        count: {},
+        deals: [],
+        errorCount: {}, 
+        previousNumberOfDeals: 0, 
+        newNumberOfDeals: 0, 
+        categories: {}, 
     };
 
-    const processedASINs = new Set(); // Tracks unique ASINs to avoid duplicates
+    const processedASINs = new Set(); 
 
-    // Aggregate previous number of deals
     result.previousNumberOfDeals = data.products.reduce((sum, product) => 
         sum + product.data.products.reduce((domainSum, domainData) => 
             domainSum + domainData.deals.length, 0
         ), 0);
 
-    // Process each priceType
     for (const { priceType, priceTypeName, data: priceTypeData, categories } of data.products) {
-        // Aggregate categories
         for (const [categoryId, category] of Object.entries(categories)) {
             if (!result.categories[categoryId]) {
                 result.categories[categoryId] = { ...category };
@@ -244,22 +241,17 @@ const processFinalData = (data) => {
             }
         }
 
-        // Initialize counters for this priceType
         result.count[priceType] = {};
         result.errorCount[priceType] = {};
 
-        // Process each domain under the priceType
         for (const { domainId, deals, errorsCount } of priceTypeData.products) {
-            // Initialize domain-specific counts
             result.count[priceType][domainId] = 0;
             result.errorCount[priceType][domainId] = errorsCount;
 
             for (const deal of deals) {
                 if (!processedASINs.has(deal.asin)) {
-                    // Mark ASIN as processed
                     processedASINs.add(deal.asin);
 
-                    // Add additional deal metadata
                     deal.dealOf = {
                         priceType,
                         priceTypeName,
@@ -267,20 +259,16 @@ const processFinalData = (data) => {
                         locale: getDomainLocaleByDomainID(domainId),
                     };
 
-                    // Add deal to results
                     result.deals.push(deal);
 
-                    // Increment deal count for this priceType and domain
                     result.count[priceType][domainId]++;
                 }
             }
         }
     }
 
-    // Update new number of deals
     result.newNumberOfDeals = result.deals.length;
 
-    // Add success or error flag
     result.success = result.newNumberOfDeals > 0;
     result.error = result.newNumberOfDeals === 0;
 

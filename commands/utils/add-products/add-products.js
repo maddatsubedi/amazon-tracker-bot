@@ -23,6 +23,12 @@ module.exports = {
 
             await interaction.deferReply();
 
+            const infoEmbed = simpleEmbed({
+                description: `**This command is currently disabled**\n\n>>> Contact Admin for support`, color: 'Yellow'
+            });
+
+            return await interaction.editReply({ embeds: [infoEmbed] });
+
             if (isAddingProducts) {
                 const errorEmbed = simpleEmbed({
                     description: `**❌ \u200b Products are already being added**\n\n>>> Please wait until the current process is completed`, color: 'Yellow'
@@ -54,6 +60,7 @@ module.exports = {
             }
 
             const result = await addProducts({ brand });
+            // console.log(result);
 
             if (result?.error) {
                 if (result.errorType === 'LIMIT_REACHED') {
@@ -99,8 +106,9 @@ module.exports = {
                     setTimestamp: true
                 }).addFields(
                     { name: '> Brand', value: `> \`${brand}\``, inline: true },
-                    {name: '> Domain', value: `> \`${data.brandDomainsDB.join(', ')}\``, inline: true},
-                    { name: '> Products Fetched', value: `> \`${data.dataCount}\``, inline: true },
+                    { name: '> Domain', value: `> \`${data.brandDomainsDB.join(', ')}\``, inline: true },
+                    { name: '> Products Fetched', value: `> \`${data.totalDataCount}\``, inline: true },
+                    { name: '> Products Processed', value: `> \`${data.dataCount}\``, inline: true },
                     { name: '> Total Products (DB)', value: `> \`${data.totalAsinsCount}\``, inline: true },
                 );
 
@@ -132,8 +140,9 @@ module.exports = {
                 setTimestamp: true
             }).addFields(
                 { name: '> Brand', value: `> \`${brand}\``, inline: true },
-                {name: '> Domain', value: `> \`${data.brandDomainsDB.join(', ')}\``, inline: true},
-                { name: '> Products Fetched', value: `> \`${data.dataCount}\``, inline: true },
+                { name: '> Domain', value: `> \`${data.brandDomainsDB.join(', ')}\``, inline: true },
+                { name: '> Products Fetched', value: `> \`${data.totalDataCount}\``, inline: true },
+                { name: '> Products Processed', value: `> \`${data.dataCount}\``, inline: true },
                 { name: '> Products Added', value: `> \`${data.successAsinsCount}\``, inline: true },
                 { name: '> Total Products (DB)', value: `> \`${data.totalAsinsCount}\``, inline: true },
             );

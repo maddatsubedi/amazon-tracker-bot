@@ -1,7 +1,7 @@
 const { getBrandDomains } = require("./database/models/asins");
 const { getKeepaTimeMinutes, getDomainIDs, formatPrice } = require("./utils/helpers");
-const { keepaAPIKey } = require('./config.json');
-const { priceTypesMap } = require('./utils/keepa.json');
+const { keepaAPIKey } = require('../config.json');
+const {priceTypesMap} = require('../utils/keepa.json');
 
 const fetchProducts = async (brand, priceType) => {
 
@@ -62,11 +62,11 @@ const fetchProducts = async (brand, priceType) => {
                     break;
                 }
 
-
+                
                 const categoriesNames = data.deals.categoryNames;
                 const categoriesIds = data.deals.categoryIds;
                 const categoriesCount = data.deals.categoryCount;
-
+                
                 for (let i = 0; i < categoriesNames.length; i++) {
                     const categoryId = categoriesIds[i];
                     const categoryName = categoriesNames[i];
@@ -277,8 +277,13 @@ const processFinalData = (data) => {
 const fetchAndProcessProducts = async (brand) => {
     const data = await fetchProductsOfAllPricesTypes(brand);
     const processedData = processFinalData(data);
-    // console.log(processedData.result.deals[0]);
+    // console.log(processedData);
     return processedData;
 }
 
-fetchAndProcessProducts('Ralph Lauren');
+module.exports = {
+    fetchProducts,
+    fetchProductsOfAllPricesTypes,
+    processFinalData,
+    fetchAndProcessProducts,
+};

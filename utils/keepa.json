@@ -17,24 +17,9 @@
             "currency": "€"
         }
     },
-    "backup": {
-        "domain": {
-            "3": {
-                "locale": "de",
-                "currency": "€"
-            },
-            "4": {
-                "locale": "fr",
-                "currency": "€"
-            },
-            "8": {
-                "locale": "it",
-                "currency": "€"
-            },
-            "9": {
-                "locale": "es",
-                "currency": "€"
-            }
-        }
+    "priceTypesMap": {
+        "0": "Amazon",
+        "1": "New",
+        "18": "Buy Box"
     }
 }

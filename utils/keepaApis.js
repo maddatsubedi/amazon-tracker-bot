@@ -307,6 +307,7 @@ const addProducts = async ({ brand }) => {
     const dataCount = processedData.numberOfProducts;
     const optimization = processedData.optimization;
     const previousDataCount = processedData.previousNumberOfProducts;
+    const totalDataCount = processedData.totalNumberOfProducts;
 
     const result = insertAsins(brand, processedData.products);
     
@@ -342,7 +343,8 @@ const addProducts = async ({ brand }) => {
             brandLocales,
             successDomains,
             successLocales,
-            totalAsinsCount
+            totalAsinsCount,
+            totalDataCount
         }
     }
 

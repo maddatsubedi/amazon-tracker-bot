@@ -3,8 +3,7 @@ const { keepaAPIKey } = require('../config.json');
 const { getLastPriceAndTimestamp, formatPrice, formatKeepaDate, getDomainIDByLocale, getAvailabeDomainIds, getDomainLocaleByDomainID, processDomainData, getKeepaTimeMinutes } = require('./helpers');
 const { domain: keepaDomain } = require('./keepa.json');
 const { insertAsins, brandExists, getBrandDomains } = require('../database/models/asins');
-
-const IMAGE_BASE_URL = 'https://images-na.ssl-images-amazon.com/images/I/';
+const { IMAGE_BASE_URL } = require('./amazon.json');
 
 const getProductDetails = async ({ asin, domain = 1 }) => {
 
@@ -191,7 +190,7 @@ const addProducts = async ({ brand }) => {
     const refillIn = data.refillIn;
     const refillRate = data.refillRate;
 
-    const tokensRequired = (10 + (1/100) * PER_PAGE) * brandDomains.length;
+    const tokensRequired = (10 + (1 / 100) * PER_PAGE) * brandDomains.length;
 
     if (tokensLeft < tokensRequired) {
         return {
@@ -310,7 +309,7 @@ const addProducts = async ({ brand }) => {
     const totalDataCount = processedData.totalNumberOfProducts;
 
     const result = insertAsins(brand, processedData.products);
-    
+
     if (!result) {
         return {
             error: true,
@@ -327,7 +326,7 @@ const addProducts = async ({ brand }) => {
     const dbSuccess = result.success;
     const totalAsinsCount = result.totalAsinsCount;
 
-    const returnData =  {
+    const returnData = {
         success: true,
         data: {
             brand,

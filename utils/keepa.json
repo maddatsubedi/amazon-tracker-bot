@@ -2,19 +2,23 @@
     "domain": {
         "3": {
             "locale": "de",
-            "currency": "€"
+            "currency": "€",
+            "flagEmoji": "🇩🇰"
         },
         "4": {
             "locale": "fr",
-            "currency": "€"
+            "currency": "€",
+            "flagEmoji": "🇫🇷"
         },
         "8": {
             "locale": "it",
-            "currency": "€"
+            "currency": "€",
+            "flagEmoji": "🇮🇹"
         },
         "9": {
             "locale": "es",
-            "currency": "€"
+            "currency": "€",
+            "flagEmoji": "🇪🇸"
         }
     },
     "priceTypesMap": {

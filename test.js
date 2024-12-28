@@ -1,4 +1,4 @@
-const { getBrandDomains , initializeDatabase} = require("./database/models/asins");
+const { getBrandDomains, initializeDatabase } = require("./database/models/asins");
 const { getKeepaTimeMinutes, getDomainIDs, formatPrice, getDomainLocaleByDomainID } = require("./utils/helpers");
 const { keepaAPIKey } = require('./config.json');
 const { priceTypesMap } = require('./utils/keepa.json');
@@ -157,7 +157,16 @@ const fetchProducts = async (brand, priceType) => {
         }
 
         const errorsCount = errors.length;
-        const dealsError = [...new Set(errors)];
+        const dealsError = errors.reduce((acc, error) => {
+            if (acc[error]) {
+                acc[error]++;
+            } else {
+                acc[error] = 1;
+            }
+            return acc;
+        }, {});
+
+        // deals error will be like { FETCH_ERROR: 5, NO_DEALS: 1 }
 
         brandProducts.push({
             domainId: domainId,
@@ -225,7 +234,7 @@ const processFinalData = (data) => {
         categories: {}, 
     };
 
-    const processedASINs = new Set(); 
+    const processedASINs = new Map(); // To track ASINs and their domains/priceTypes
 
     result.previousNumberOfDeals = data.products.reduce((sum, product) => 
         sum + product.data.products.reduce((domainSum, domainData) => 
@@ -244,20 +253,44 @@ const processFinalData = (data) => {
         result.count[priceType] = {};
         result.errorCount[priceType] = {};
 
-        for (const { domainId, deals, errorsCount } of priceTypeData.products) {
+        for (const { domainId, deals, errors } of priceTypeData.products) {
             result.count[priceType][domainId] = 0;
-            result.errorCount[priceType][domainId] = errorsCount;
+
+            // Initialize the errorCount for this domainId if it doesn't exist
+            if (!result.errorCount[priceType][domainId]) {
+                result.errorCount[priceType][domainId] = {};
+            }
+
+            // Update error counts in the errorCount object
+            for (const [errorName, errorCount] of Object.entries(errors)) {
+                if (!result.errorCount[priceType][domainId][errorName]) {
+                    result.errorCount[priceType][domainId][errorName] = 0;
+                }
+                result.errorCount[priceType][domainId][errorName] += errorCount;
+            }
 
             for (const deal of deals) {
+                // Track domains and priceTypes for each ASIN
                 if (!processedASINs.has(deal.asin)) {
-                    processedASINs.add(deal.asin);
+                    processedASINs.set(deal.asin, {});
+                }
 
-                    deal.dealOf = {
-                        priceType,
-                        priceTypeName,
-                        domainId,
-                        locale: getDomainLocaleByDomainID(domainId),
-                    };
+                if (!processedASINs.get(deal.asin)[domainId]) {
+                    processedASINs.get(deal.asin)[domainId] = [];
+                }
+
+                if (!processedASINs.get(deal.asin)[domainId].includes(priceType)) {
+                    processedASINs.get(deal.asin)[domainId].push(priceType);
+                }
+
+                // Avoid duplicate deals in result.deals
+                if (!processedASINs.get(deal.asin).processed) {
+                    processedASINs.get(deal.asin).processed = true;
+
+                    const dealOf = { ...processedASINs.get(deal.asin) };
+                    delete dealOf.processed;
+
+                    deal.dealOf = dealOf;
 
                     result.deals.push(deal);
 
@@ -278,27 +311,26 @@ const processFinalData = (data) => {
     };
 };
 
-
 const fetchAndProcessProducts = async (brand) => {
     const data = await fetchProductsOfAllPricesTypes(brand);
     const processedData = processFinalData(data);
     // console.log(processedData);
-    // console.log(processedData.result.deals[0]);
-    // console.log(processedData.result.categories);
     // console.log(processedData.result.count);
+    // console.log(processedData.result.errorCount);
+    // console.log(processedData.result.categories);
+    console.log(processedData.result.deals[0]);
+    console.log(processedData.tokensData);
     return processedData;
 }
 
-// fetchAndProcessProducts('adidas');
-
-function setup(){
+function setup() {
     initializeDatabase()
 }
 
-function main(){
+function main() {
     const startTime = Date.now();
     setup();
-    fetchAndProcessProducts('adidas').then(() => {
+    fetchAndProcessProducts('Ralph Lauren').then(() => {
         const endTime = Date.now();
         const timeTaken = endTime - startTime;
         console.log(`Time taken: ${timeTaken}ms`);

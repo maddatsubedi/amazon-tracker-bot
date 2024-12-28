@@ -313,6 +313,7 @@ const fetchAndProcessProducts = async (brand) => {
     // console.log(processedData.result.count);
     // console.log(processedData.result.errorCount);
     // console.log(processedData.result.categories);
+    console.log(processedData);
     console.log(processedData.result.deals[0]);
     console.log(processedData.tokensData);
     return processedData;
@@ -325,7 +326,7 @@ function setup() {
 function main() {
     const startTime = Date.now();
     setup();
-    fetchAndProcessProducts('Ralph Lauren').then(() => {
+    fetchAndProcessProducts('adidas').then(() => {
         const endTime = Date.now();
         const timeTaken = endTime - startTime;
         console.log(`Time taken: ${timeTaken}ms`);

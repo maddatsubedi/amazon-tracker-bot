@@ -110,18 +110,19 @@ const fetchProducts = async (brand, priceType) => {
                         dropMonth: deal.delta[2][1] <= 0 ? null : formatPrice(deal.delta[2][1], domainId),
                     };
 
-                    const usedStat = {
-                        currentPrice: deal.current[2] <= 0 ? null : formatPrice(deal.current[2], domainId),
-                        avgDay: deal.avg[0][2] <= 0 ? null : formatPrice(deal.avg[0][2], domainId),
-                        avgWeek: deal.avg[1][2] <= 0 ? null : formatPrice(deal.avg[1][2], domainId),
-                        avgMonth: deal.avg[2][2] <= 0 ? null : formatPrice(deal.avg[2][2], domainId),
-                        percentageDropDay: deal.deltaPercent[0][2] <= 0 ? null : deal.deltaPercent[0][2],
-                        percentageDropWeek: deal.deltaPercent[1][2] <= 0 ? null : deal.deltaPercent[1][2],
-                        percentageDropMonth: deal.deltaPercent[2][2] <= 0 ? null : deal.deltaPercent[2][2],
-                        dropDay: deal.delta[0][2] <= 0 ? null : formatPrice(deal.delta[0][2], domainId),
-                        dropWeek: deal.delta[1][2] <= 0 ? null : formatPrice(deal.delta[1][2], domainId),
-                        dropMonth: deal.delta[2][2] <= 0 ? null : formatPrice(deal.delta[2][2], domainId),
-                    };
+                    // 🔴 DO NOT REMOVE
+                    // const usedStat = {
+                    //     currentPrice: deal.current[2] <= 0 ? null : formatPrice(deal.current[2], domainId),
+                    //     avgDay: deal.avg[0][2] <= 0 ? null : formatPrice(deal.avg[0][2], domainId),
+                    //     avgWeek: deal.avg[1][2] <= 0 ? null : formatPrice(deal.avg[1][2], domainId),
+                    //     avgMonth: deal.avg[2][2] <= 0 ? null : formatPrice(deal.avg[2][2], domainId),
+                    //     percentageDropDay: deal.deltaPercent[0][2] <= 0 ? null : deal.deltaPercent[0][2],
+                    //     percentageDropWeek: deal.deltaPercent[1][2] <= 0 ? null : deal.deltaPercent[1][2],
+                    //     percentageDropMonth: deal.deltaPercent[2][2] <= 0 ? null : deal.deltaPercent[2][2],
+                    //     dropDay: deal.delta[0][2] <= 0 ? null : formatPrice(deal.delta[0][2], domainId),
+                    //     dropWeek: deal.delta[1][2] <= 0 ? null : formatPrice(deal.delta[1][2], domainId),
+                    //     dropMonth: deal.delta[2][2] <= 0 ? null : formatPrice(deal.delta[2][2], domainId),
+                    // };
 
                     const buyBoxStat = {
                         currentPrice: deal.current[18] <= 0 ? null : formatPrice(deal.current[18], domainId),
@@ -138,7 +139,7 @@ const fetchProducts = async (brand, priceType) => {
 
                     dealStat.amazonStat = amazonStat;
                     dealStat.newStat = newStat;
-                    dealStat.usedStat = usedStat;
+                    // dealStat.usedStat = usedStat;
                     dealStat.buyBoxStat = buyBoxStat;
 
                     deals.push(dealStat);
@@ -165,8 +166,6 @@ const fetchProducts = async (brand, priceType) => {
             }
             return acc;
         }, {});
-
-        // deals error will be like { FETCH_ERROR: 5, NO_DEALS: 1 }
 
         brandProducts.push({
             domainId: domainId,
@@ -234,7 +233,7 @@ const processFinalData = (data) => {
         categories: {}, 
     };
 
-    const processedASINs = new Map(); // To track ASINs and their domains/priceTypes
+    const processedASINs = new Map();
 
     result.previousNumberOfDeals = data.products.reduce((sum, product) => 
         sum + product.data.products.reduce((domainSum, domainData) => 
@@ -256,12 +255,10 @@ const processFinalData = (data) => {
         for (const { domainId, deals, errors } of priceTypeData.products) {
             result.count[priceType][domainId] = 0;
 
-            // Initialize the errorCount for this domainId if it doesn't exist
             if (!result.errorCount[priceType][domainId]) {
                 result.errorCount[priceType][domainId] = {};
             }
 
-            // Update error counts in the errorCount object
             for (const [errorName, errorCount] of Object.entries(errors)) {
                 if (!result.errorCount[priceType][domainId][errorName]) {
                     result.errorCount[priceType][domainId][errorName] = 0;
@@ -270,7 +267,6 @@ const processFinalData = (data) => {
             }
 
             for (const deal of deals) {
-                // Track domains and priceTypes for each ASIN
                 if (!processedASINs.has(deal.asin)) {
                     processedASINs.set(deal.asin, {});
                 }
@@ -283,7 +279,6 @@ const processFinalData = (data) => {
                     processedASINs.get(deal.asin)[domainId].push(priceType);
                 }
 
-                // Avoid duplicate deals in result.deals
                 if (!processedASINs.get(deal.asin).processed) {
                     processedASINs.get(deal.asin).processed = true;
 
@@ -318,23 +313,24 @@ const fetchAndProcessProducts = async (brand) => {
     // console.log(processedData.result.count);
     // console.log(processedData.result.errorCount);
     // console.log(processedData.result.categories);
+    console.log(processedData);
     console.log(processedData.result.deals[0]);
     console.log(processedData.tokensData);
     return processedData;
 }
 
 function setup() {
-    initializeDatabase()
+    initializeDatabase();
 }
 
 function main() {
     const startTime = Date.now();
     setup();
-    fetchAndProcessProducts('Ralph Lauren').then(() => {
+    fetchAndProcessProducts('adidas').then(() => {
         const endTime = Date.now();
         const timeTaken = endTime - startTime;
         console.log(`Time taken: ${timeTaken}ms`);
     });
 }
 
-main()
+main();

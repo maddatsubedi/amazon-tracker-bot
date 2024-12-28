@@ -1,4 +1,5 @@
 const { domain } = require('../utils/keepa.json');
+const { IMAGE_BASE_URL } = require('../utils/amazon.json');
 
 function checkRole(member, roleId) {
     return member.roles.cache.has(roleId);
@@ -277,6 +278,10 @@ function getKeepaTimeMinutes(daysAgo) {
     return keepaTime;
 }
 
+const getDealImage = (image) => {
+    return `${IMAGE_BASE_URL}${String.fromCharCode(...image)}`;
+}
+
 module.exports = {
     checkRole,
     checkRolesFromList,
@@ -298,5 +303,6 @@ module.exports = {
     calculateTokensRefillTime,
     processDomainData,
     getKeepaTimeMinutes,
-    getDomainIDs
+    getDomainIDs,
+    getDealImage
 };

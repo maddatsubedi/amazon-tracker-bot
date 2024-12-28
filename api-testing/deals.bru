@@ -1,0 +1,27 @@
+meta {
+  name: deals
+  type: http
+  seq: 3
+}
+
+post {
+  url: https://api.keepa.com/deal?key=fh9k06ea081m9cgblf0d0lrf9asdg8g2n1c9sps7hgfkpb3njnt359v9u684mglh
+  body: json
+  auth: none
+}
+
+params:query {
+  key: fh9k06ea081m9cgblf0d0lrf9asdg8g2n1c9sps7hgfkpb3njnt359v9u684mglh
+}
+
+body:json {
+  {
+    "domainId": 4,
+    "page": 0,
+    "titleSearch": "adidas",
+    "priceTypes": 0,
+    "dateRange": 0,
+    "isRangeEnabled": true,
+    "deltaPercentRange": [ 20, 100]
+  }
+}

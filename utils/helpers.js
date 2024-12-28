@@ -282,6 +282,23 @@ const getDealImage = (image) => {
     return `${IMAGE_BASE_URL}${String.fromCharCode(...image)}`;
 }
 
+const parseTimeToMilliseconds = (timeStr) => {
+    const timeParts = timeStr.match(/(\d+)\s*(hr|min|sec)/g) || [];
+    let totalMilliseconds = 0;
+
+    timeParts.forEach(part => {
+        const [_, value, unit] = part.match(/(\d+)\s*(hr|min|sec)/);
+        const timeValue = parseInt(value, 10);
+        switch (unit) {
+            case 'hr': totalMilliseconds += timeValue * 3600000; break;
+            case 'min': totalMilliseconds += timeValue * 60000; break;
+            case 'sec': totalMilliseconds += timeValue * 1000; break;
+        }
+    });
+
+    return totalMilliseconds;
+};
+
 module.exports = {
     checkRole,
     checkRolesFromList,
@@ -304,5 +321,6 @@ module.exports = {
     processDomainData,
     getKeepaTimeMinutes,
     getDomainIDs,
-    getDealImage
+    getDealImage,
+    parseTimeToMilliseconds
 };

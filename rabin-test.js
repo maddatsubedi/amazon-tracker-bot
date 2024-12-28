@@ -1,12 +1,11 @@
 const { getBrandDomains, initializeDatabase } = require("./database/models/asins");
-const { getKeepaTimeMinutes, getDomainIDs, formatPrice, getDomainLocaleByDomainID, getRefillTime, calculateTokensRefillTime } = require("./utils/helpers");
+const { getKeepaTimeMinutes, getDomainIDs, formatPrice, getDomainLocaleByDomainID, getRefillTime, calculateTokensRefillTime ,parseTimeToMilliseconds} = require("./utils/helpers");
 const { keepaAPIKey } = require('./config.json');
 const { priceTypesMap } = require('./utils/keepa.json');
 const cron  = require('node-schedule');
 
 
 
-// filepath: /d:/company/amazon-tracker-bot/test.js
 const fetchProducts = async (brand, priceType) => {
     const domains = await getBrandDomains(brand);
     const domainIds = getDomainIDs(domains);
@@ -345,6 +344,8 @@ const refillTokens = () => {
     console.log(`Current tokens: ${tokensLeft}`);
 };
 
+setInterval(refillTokens, 60000);
+
 const hasEnoughTokens = (brand) => {
     const requiredTokens = brandTokenRequirements[brand] || 100;
     return tokensLeft >= requiredTokens;
@@ -355,31 +356,66 @@ function setup() {
     initializeDatabase();
 }
 
-const createSchedule = (brand, interval) => {
-    if (!hasEnoughTokens(brand)) {
+const createSchedule = async (brands, interval) => {
+    const waitForTokens = async (brand) => {
         const requiredTokens = brandTokenRequirements[brand] || 100;
+        
+        if (tokensLeft >= requiredTokens) {
+            return;
+        }
+
         const refillTime = calculateTokensRefillTime(refillRate, refillIn, tokensLeft, requiredTokens);
-        console.log(`Not enough: ${brand}. refill time${refillTime}.`);
-        return;
-    }
+        const refillTimeInMs = parseTimeToMilliseconds(refillTime);
 
-    if (cronJob) {
-        cronJob.stop();  // Cancel previous schedule
-    }
+        console.log(`Not enough:${brand}. refil time ${refillTime}.`);
+        await new Promise(resolve => setTimeout(resolve, refillTimeInMs));
 
-    cronJob = cron.schedule(interval, async () => {
-        console.log(`Running ${brand}...`);
-        const data = await fetchProducts(brand, 1);
-        console.log(data);
-    });
+        // Recursively check if tokens are now available
+        return waitForTokens(brand);
+    };
 
-    console.log(`Schedule for ${brand} created. Running every ${interval}.`);
+    const processBrandsSequentially = async () => {
+        while (true) {
+            for (let i = 0; i < brands.length; i++) {
+                const brand = brands[i];
+                console.log(`Processing ${brand}...`);
+    
+                await waitForTokens(brand); 
+    
+                console.log(`Fetching: ${brand}...`);
+                const data = await fetchProducts(brand, 1); 
+                console.log(data);
+    
+                if (i < brands.length - 1) { // Don't wait after the last brand
+                    console.log(`Waiting for ${interval}ms`);
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+    
+                if (i === brands.length - 1) {
+                    setImmediate(() => {
+                        console.log('Next round starting soon...');
+                    });
+                }
+            }
+    
+            console.log('All brands processed.');
+            await new Promise(resolve => setTimeout(resolve, interval));  
+
+
+            setImmediate(() => {
+                console.log('Starting the next round of brand processing...');
+            });
+        }
+    };
+
+    await processBrandsSequentially();
 };
+
 
 
 function main() {
     setup();
-    fetchAndProcessProducts('adidas')
+    createSchedule(['adidas'], parseTimeToMilliseconds('10 sec'));
 }
 
 main();

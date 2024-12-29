@@ -4,6 +4,7 @@ const { keepaAPIKey } = require('./config.json');
 const { priceTypesMap } = require('./utils/keepa.json');
 const cron  = require('node-schedule');
 const { setConfig, getConfig, setupGlobalTracking, isGlobalTrackingEnabled } = require("./database/models/config");
+const notify = require("./tracking/notify");
 
 const fetchProducts = async (brand, priceType) => {
     const domains = await getBrandDomains(brand);
@@ -393,8 +394,12 @@ const createSchedule = async (brands, interval) => {
                 await waitForTokens(brand); 
     
                 console.log(`Fetching: ${brand}...`);
-                const data = await fetchProducts(brand, 1); 
-                console.log(data);
+                const data = await fetchAndProcessProducts(brand);
+                for(let i = 0; i < data.result.deals.length; i++){
+                    notify(data.result.deals[i]);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    console.log(data);
+                }
     
                 if (i < brands.length - 1) { // Don't wait after the last brand
                     console.log(`Waiting for ${interval}ms`);

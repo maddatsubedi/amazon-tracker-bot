@@ -109,7 +109,7 @@ const getProductDetails = async ({ asin, domain = 1 }) => {
 
 };
 
-const getProductGraphBuffer = async ({ asin, domain = 1 }) => {
+const getProductGraphBuffer = async ({ asin, domain = 1, priceTypes }) => {
 
     if (!asin) {
         return {
@@ -119,7 +119,9 @@ const getProductGraphBuffer = async ({ asin, domain = 1 }) => {
         }
     }
 
-    const url = `https://api.keepa.com/graphimage?key=${keepaAPIKey}&domain=${domain}&asin=${asin}`;
+    const priceTypesUrlParams = priceTypes?.map(priceType => `&${priceType}=1`).join(``) || ``;
+
+    const url = `https://api.keepa.com/graphimage?key=${keepaAPIKey}&domain=${domain}&asin=${asin}${priceTypesUrlParams}`;
 
     try {
         const response = await fetch(url);

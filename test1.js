@@ -1,5 +1,5 @@
 const { IMAGE_BASE_URL } = require('./utils/amazon.json');
-const { priceTypesMap: priceTypesMapKeepa } = require('./utils/keepa.json')
+const { priceTypesMap: priceTypesMapKeepa } = require('./utils/keepa.json');
 const { getDealImage, formatKeepaDate, getDomainLocaleByDomainID } = require('./utils/helpers');
 
 const data = {
@@ -95,6 +95,7 @@ const processDealData = (deal) => {
         }
         return acc;
     }, { value: 0, priceType: null });
+
     const data = { ...deal };
     data.image = getDealImage(deal.image);
     data.creationDate = formatKeepaDate(deal.creationDate);
@@ -109,5 +110,8 @@ const processDealData = (deal) => {
     return data;
 }
 
+const startTime = Date.now();
 console.log(processDealData(data));
 // processDealData(data);
+const endTime = Date.now();
+console.log(`Execution Time: ${(endTime - startTime)}ms`);

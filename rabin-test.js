@@ -4,8 +4,6 @@ const { keepaAPIKey } = require('./config.json');
 const { priceTypesMap } = require('./utils/keepa.json');
 const cron  = require('node-schedule');
 
-
-
 const fetchProducts = async (brand, priceType) => {
     const domains = await getBrandDomains(brand);
     const domainIds = getDomainIDs(domains);

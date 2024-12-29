@@ -3,7 +3,7 @@ const { simpleEmbed } = require('../../../embeds/generalEmbeds');
 const { setRange, getChannelAndRole } = require('../../../database/models/discount_range');
 const { validateRange, isValidASIN, getDomainIDByLocale, generateRandomHexColor, getAvailableDomains, getAvailabeLocales } = require('../../../utils/helpers');
 const { domain } = require('../../../utils/keepa.json');
-const { getProductDetails, getProductGraphBuffer } = require('../../../utils/keepaApis');
+const { getProductDetails, getProductGraphBuffer } = require('../../../utils/keepaProductApi');
 
 module.exports = {
     data: new SlashCommandBuilder()

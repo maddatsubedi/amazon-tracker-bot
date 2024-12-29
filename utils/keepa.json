@@ -25,5 +25,13 @@
         "0": "Amazon",
         "1": "New",
         "18": "Buy Box"
+    },
+    "priceTypesAccesor": {
+        "0": "amazonStat",
+        "1": "newStat",
+        "18": "buyBoxStat"
+    },
+    "config" : {
+        "mainDomainId": 4
     }
 }

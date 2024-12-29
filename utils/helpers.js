@@ -33,7 +33,7 @@ const formatPrice = (price, domainID) => {
         return 'Out of Stock';
     }
 
-    return `${currency}${(price / 100).toFixed(2)}`;
+    return `${currency} ${(price / 100).toFixed(2)}`;
 };
 
 const formatKeepaDate = (date) => {

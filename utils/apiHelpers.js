@@ -1,6 +1,6 @@
-const { IMAGE_BASE_URL } = require('../utils/amazon.json');
-const { priceTypesMap: priceTypesMapKeepa } = require('../utils/keepa.json')
-const { getDealImage, formatKeepaDate, getDomainLocaleByDomainID } = require('../utils/helpers');
+const { IMAGE_BASE_URL } = require('./amazon.json');
+const { priceTypesMap: priceTypesMapKeepa, priceTypesAccesor } = require('./keepa.json')
+const { getDealImage, formatKeepaDate, getDomainLocaleByDomainID } = require('./helpers');
 
 const processDealData = (deal) => {
 

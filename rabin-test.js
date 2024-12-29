@@ -212,6 +212,7 @@ const fetchProductsOfAllPricesTypes = async (brand) => {
     const refillRate = data.refillRate;
 
     const productsData = {
+        brand: brand,
         products: products,
         tokensData: {
             tokensLeft: tokensLeft,
@@ -230,7 +231,8 @@ const processFinalData = (data) => {
         errorCount: {}, 
         previousNumberOfDeals: 0, 
         newNumberOfDeals: 0, 
-        categories: {}, 
+        categories: {},
+        brand: data.brand,
     };
 
     const processedASINs = new Map();
@@ -287,6 +289,8 @@ const processFinalData = (data) => {
 
                     deal.dealOf = dealOf;
 
+                    deal.brand = data.brand;
+
                     result.deals.push(deal);
 
                     result.count[priceType][domainId]++;
@@ -309,10 +313,6 @@ const processFinalData = (data) => {
 const fetchAndProcessProducts = async (brand) => {
     const data = await fetchProductsOfAllPricesTypes(brand);
     const processedData = processFinalData(data);
-    // console.log(processedData);
-    // console.log(processedData.result.count);
-    // console.log(processedData.result.errorCount);
-    // console.log(processedData.result.categories);
     console.log(processedData);
     console.log(processedData.result.deals[0]);
     console.log(processedData.tokensData);

@@ -8,67 +8,68 @@ const { insertBrand } = require('../../../database/models/asins');
 const { getDealEmbed } = require('../../../embeds/dealsEmbeds');
 
 const data = {
-    asin: 'B0C4LNSMZX',
-    title: 'adidas 3S Tc Pt Legink XXL',
-    image: 'https://images-na.ssl-images-amazon.com/images/I/71-0QmLu6bL.jpg',
-    creationDate: 'Sun, 29 Dec 2024 01:06:00 GMT',
-    categories: [26086537031, 3520847031, 27982170031],
-    rootCat: 11961464031,
-    lastUpdate: 'Sun, 29 Dec 2024 01:06:00 GMT',
+    asin: 'B09TXWWZ7G',
+    title: 'Polo Ralph Lauren Baskets Keaton Pony pour Homme, Blanc Multi PP, 47 EU',
+    image: 'https://images-na.ssl-images-amazon.com/images/I/71vsYSoVpML.jpg',
+    creationDate: 'Sat, 28 Dec 2024 07:08:00 GMT',
+    categories: [1765043031],
+    rootCat: 11961521031,
+    lastUpdate: 'Sat, 28 Dec 2024 20:00:00 GMT',
     amazonStat: {
-        currentPrice: 2750,
-        avgDay: 3750,
-        avgWeek: 3786,
-        avgMonth: 3794,
+        currentPrice: 5512,
+        avgDay: 7515,
+        avgWeek: 7756,
+        avgMonth: 7445,
         percentageDropDay: 27,
-        percentageDropWeek: 27,
-        percentageDropMonth: 28,
-        dropDay: 1000,
-        dropWeek: 1036,
-        dropMonth: 1044
+        percentageDropWeek: 29,
+        percentageDropMonth: 26,
+        dropDay: 2003,
+        dropWeek: 2244,
+        dropMonth: 1933
     },
     newStat: {
-        currentPrice: 2750,
-        avgDay: 3750,
-        avgWeek: 3782,
-        avgMonth: 3772,
+        currentPrice: 5512,
+        avgDay: 7515,
+        avgWeek: 7756,
+        avgMonth: 7445,
         percentageDropDay: 27,
-        percentageDropWeek: 27,
-        percentageDropMonth: 27,
-        dropDay: 1000,
-        dropWeek: 1032,
-        dropMonth: 1022
+        percentageDropWeek: 29,
+        percentageDropMonth: 26,
+        dropDay: 2003,
+        dropWeek: 2244,
+        dropMonth: 1933
     },
     buyBoxStat: {
-        currentPrice: 2750,
-        avgDay: 3750,
-        avgWeek: 3786,
-        avgMonth: 3794,
+        currentPrice: 5512,
+        avgDay: 7515,
+        avgWeek: 7756,
+        avgMonth: 7521,
         percentageDropDay: 27,
-        percentageDropWeek: 27,
-        percentageDropMonth: 28,
-        dropDay: 1000,
-        dropWeek: 1036,
-        dropMonth: 1044
+        percentageDropWeek: 29,
+        percentageDropMonth: 27,
+        dropDay: 2003,
+        dropWeek: 2244,
+        dropMonth: 2009
     },
-    dealOf: { '3': [0, 1, 18] },
-    formattedDealOf: { de: ['Amazon', 'New', 'Buy Box'] },
-    productUrls: { '3': 'https://www.amazon.de/dp/B0C4LNSMZX' },
-    domains: ['3'],
+    dealOf: { '4': [0, 1, 18] },
+    brand: 'Ralph Lauren',
+    formattedDealOf: { fr: ['Amazon', 'New', 'Buy Box'] },
+    productUrls: { '4': 'https://www.amazon.fr/dp/B09TXWWZ7G' },
+    domains: ['4'],
     availabePriceTypes: [0, 1, 18],
     maxPercentageDropDay: { value: 27, priceTypes: [0, 1, 18] }
 }
 
 module.exports = {
-	data: new SlashCommandBuilder()
-		.setName('ping')
-		.setDescription('Replies with Pong!'),
-	async execute(interaction) {
-		await interaction.deferReply();
+    data: new SlashCommandBuilder()
+        .setName('ping')
+        .setDescription('Replies with Pong!'),
+    async execute(interaction) {
+        await interaction.deferReply();
 
-		const dealEmbed = await getDealEmbed(data);
+        const dealEmbed = await getDealEmbed(data);
 
-		await interaction.channel.send(dealEmbed);
-		return await interaction.editReply('Pong!');
-	},
+        await interaction.channel.send(dealEmbed);
+        return await interaction.editReply('Pong!');
+    },
 };

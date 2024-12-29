@@ -1,8 +1,9 @@
-const { getBrandDomains, initializeDatabase } = require("./database/models/asins");
+const { getBrandDomains, initializeDatabase, getAllBrands, getAllTrackedBrands } = require("./database/models/asins");
 const { getKeepaTimeMinutes, getDomainIDs, formatPrice, getDomainLocaleByDomainID, getRefillTime, calculateTokensRefillTime ,parseTimeToMilliseconds} = require("./utils/helpers");
 const { keepaAPIKey } = require('./config.json');
 const { priceTypesMap } = require('./utils/keepa.json');
 const cron  = require('node-schedule');
+const { setConfig, getConfig, setupGlobalTracking, isGlobalTrackingEnabled } = require("./database/models/config");
 
 const fetchProducts = async (brand, priceType) => {
     const domains = await getBrandDomains(brand);
@@ -352,10 +353,14 @@ const hasEnoughTokens = (brand) => {
 
 function setup() {
     initializeDatabase();
+    setupGlobalTracking()
 }
 
 const createSchedule = async (brands, interval) => {
     const waitForTokens = async (brand) => {
+        if (!isGlobalTrackingEnabled()) {
+            return ;
+        }
         const requiredTokens = brandTokenRequirements[brand] || 100;
         
         if (tokensLeft >= requiredTokens) {
@@ -374,8 +379,15 @@ const createSchedule = async (brands, interval) => {
 
     const processBrandsSequentially = async () => {
         while (true) {
-            for (let i = 0; i < brands.length; i++) {
-                const brand = brands[i];
+            if(!isGlobalTrackingEnabled()){
+                break;
+            }
+            let allBrandsData = getAllTrackedBrands();
+            let brandsNameData = allBrandsData.map(brand => brand.name);
+            console.log(brandsNameData);
+
+            for (let i = 0; i < brandsNameData.length; i++) {
+                const brand = brandsNameData[i];
                 console.log(`Processing ${brand}...`);
     
                 await waitForTokens(brand); 

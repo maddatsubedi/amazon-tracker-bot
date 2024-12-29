@@ -17,6 +17,14 @@ const setConfig = (key, value) => {
     `).run(key, value);
 };
 
+const setIfNotExists = (key, value) => {
+    createConfigTable();
+    const row = db.prepare('SELECT value FROM config WHERE key = ?').get(key);
+    if (!row) {
+        setConfig(key, value);
+    }
+}
+
 const getConfig = (key) => {
     createConfigTable();
     const row = db.prepare('SELECT value FROM config WHERE key = ?').get(key);
@@ -39,10 +47,31 @@ const resetConfig = () => {
     db.prepare('DELETE FROM config').run();
 };
 
+
+const disableGlobalTracking = () => {
+    setConfig('global_tracking', '0');
+};
+
+const enableGlobalTracking = () => {
+    setConfig('global_tracking', '1');
+}
+
+const isGlobalTrackingEnabled = () => {
+    return getConfig('global_tracking') === '1';
+}
+
+const setupGlobalTracking = () => {
+    setIfNotExists('global_tracking', '1');
+}
+
 module.exports = {
     setConfig,
     getConfig,
     getAllConfigs,
     deleteConfig,
     resetConfig,
+    disableGlobalTracking,
+    enableGlobalTracking,
+    isGlobalTrackingEnabled,
+    setupGlobalTracking
 };

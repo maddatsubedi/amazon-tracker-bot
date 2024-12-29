@@ -160,6 +160,11 @@ const getAllBrands = () => {
   return db.prepare("SELECT * FROM brands").all();
 };
 
+const getAllTrackedBrands = () => {
+  return db.prepare("SELECT * FROM brands WHERE tracking = 1").all();
+};
+
+
 const brandExists = (brandName) => {
   const brand = db
     .prepare("SELECT id FROM brands WHERE name = ?")
@@ -198,4 +203,5 @@ module.exports = {
   deleteBrandAndAsins,
   getBrandDomains,
   initializeDatabase,
+  getAllTrackedBrands
 };

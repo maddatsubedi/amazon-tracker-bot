@@ -1,7 +1,8 @@
 const { getBrandDomains, initializeDatabase } = require("../database/models/asins");
-const { getKeepaTimeMinutes, getDomainIDs, formatPrice, getDomainLocaleByDomainID } = require("./utils/helpers");
-const { keepaAPIKey } = require('./config.json');
-const { priceTypesMap } = require('./utils/keepa.json');
+const { getKeepaTimeMinutes, getDomainIDs, formatPrice, getDomainLocaleByDomainID } = require("../utils/helpers");
+const { keepaAPIKey } = require('../config.json');
+const { priceTypesMap } = require('../utils/keepa.json');
+const processDealData = require("./apiHelpers");
 
 // filepath: /d:/company/amazon-tracker-bot/test.js
 const fetchProducts = async (brand, priceType) => {
@@ -212,6 +213,7 @@ const fetchProductsOfAllPricesTypes = async (brand) => {
     const refillRate = data.refillRate;
 
     const productsData = {
+        brand: brand,
         products: products,
         tokensData: {
             tokensLeft: tokensLeft,
@@ -230,7 +232,8 @@ const processFinalData = (data) => {
         errorCount: {}, 
         previousNumberOfDeals: 0, 
         newNumberOfDeals: 0, 
-        categories: {}, 
+        categories: {},
+        brand: data.brand,
     };
 
     const processedASINs = new Map();
@@ -287,6 +290,8 @@ const processFinalData = (data) => {
 
                     deal.dealOf = dealOf;
 
+                    deal.brand = data.brand;
+
                     result.deals.push(deal);
 
                     result.count[priceType][domainId]++;
@@ -319,7 +324,7 @@ function setup() {
 function main() {
     const startTime = Date.now();
     setup();
-    fetchAndProcessProducts('adidas').then(() => {
+    fetchAndProcessProducts('Ralph Lauren').then(() => {
         const endTime = Date.now();
         const timeTaken = endTime - startTime;
         console.log(`Time taken: ${timeTaken}ms`);

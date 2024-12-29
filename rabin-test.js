@@ -399,7 +399,6 @@ const createSchedule = async (brands, interval) => {
             console.log('All brands processed.');
             await new Promise(resolve => setTimeout(resolve, interval));  
 
-
             setImmediate(() => {
                 console.log('Starting the next round of brand processing...');
             });

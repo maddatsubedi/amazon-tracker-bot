@@ -46,6 +46,23 @@ const resetRanges = () => {
     db.prepare('DELETE FROM discount_range').run();
 };
 
+const getRange = (range) => {
+    createPriceRangeTable();
+    return db.prepare('SELECT * FROM discount_range WHERE range = ?').get(range);
+};
+
+const getRangeForDiscount = (discount) => {
+    createPriceRangeTable();
+    const discountRanges = db.prepare('SELECT * FROM discount_range').all();
+
+    const range = discountRanges.find(range => {
+        const [i, f] = range.range.split('-').map(Number);
+        return discount >= i && discount < f;
+    });
+
+    return range;
+};
+
 module.exports = {
     setRange,
     updateRange,
@@ -53,4 +70,6 @@ module.exports = {
     getAllRanges,
     deleteRange,
     resetRanges,
+    getRange,
+    getRangeForDiscount
 };

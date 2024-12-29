@@ -119,7 +119,8 @@ const getProductGraphBuffer = async ({ asin, domain = 1, priceTypes }) => {
         }
     }
 
-    const priceTypesUrlParams = priceTypes?.map(priceType => `&${priceType}=1`).join(``) || ``;
+    
+    const priceTypesUrlParams = priceTypes ? Object.entries(priceTypes).map(([key, value]) => `&${key}=${value}`).join('') : '';
 
     const url = `https://api.keepa.com/graphimage?key=${keepaAPIKey}&domain=${domain}&asin=${asin}${priceTypesUrlParams}`;
 
@@ -127,11 +128,7 @@ const getProductGraphBuffer = async ({ asin, domain = 1, priceTypes }) => {
         const response = await fetch(url);
 
         if (!response.ok) {
-            return {
-                error: true,
-                errorType: 'APIError',
-                message: 'Error fetching product data'
-            }
+            return;
         }
 
         const arrayBuffer = await response.arrayBuffer();
@@ -141,11 +138,7 @@ const getProductGraphBuffer = async ({ asin, domain = 1, priceTypes }) => {
 
     } catch (error) {
         // console.log(error);
-        return {
-            error: true,
-            errorType: 'ExceptionError',
-            message: 'Error fetching product data'
-        }
+        return;
     }
 
 };

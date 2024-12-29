@@ -4,12 +4,6 @@ const { getDealImage, formatKeepaDate, getDomainLocaleByDomainID } = require('..
 
 const processDealData = (deal) => {
 
-    const priceTypesMap = {
-        '0': 'amazonStat',
-        '1': 'newStat',
-        '18': 'buyBoxStat'
-    }
-
     const dealOf = deal.dealOf;
     const dealOfDomains = Object.keys(dealOf);
 
@@ -34,13 +28,18 @@ const processDealData = (deal) => {
     const availabePriceTypes = [...new Set(availabePriceTypesArray)];
 
     const maxPercentageDropDay = availabePriceTypes.reduce((acc, priceType) => {
-        const percentageDropDay = deal[priceTypesMap[priceType]].percentageDropDay;
+        const percentageDropDay = deal[priceTypesAccesor[priceType]].percentageDropDay;
+
         if (percentageDropDay > acc.value) {
             acc.value = percentageDropDay;
-            acc.priceType = priceType;
+            acc.priceTypes = [priceType];
+        } else if (percentageDropDay === acc.value) {
+            acc.priceTypes.push(priceType);
         }
+
         return acc;
-    }, { value: 0, priceType: null });
+    }, { value: 0, priceTypes: [] });
+
     const data = { ...deal };
     data.image = getDealImage(deal.image);
     data.creationDate = formatKeepaDate(deal.creationDate);
@@ -49,7 +48,6 @@ const processDealData = (deal) => {
     data.productUrls = productUrls;
     data.domains = dealOfDomains;
     data.availabePriceTypes = availabePriceTypes;
-    data.priceTypesMap = priceTypesMap;
     data.maxPercentageDropDay = maxPercentageDropDay;
 
     return data;

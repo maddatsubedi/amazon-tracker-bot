@@ -1,10 +1,11 @@
 const { getBrandDomains, initializeDatabase, getAllBrands, getAllTrackedBrands } = require("../database/models/asins");
-const { getKeepaTimeMinutes, getDomainIDs, formatPrice, getDomainLocaleByDomainID, getRefillTime, calculateTokensRefillTime ,parseTimeToMilliseconds} = require("./helpers");
+const { getKeepaTimeMinutes, getDomainIDs, formatPrice, formatKeepaDate, getDomainLocaleByDomainID, getRefillTime, calculateTokensRefillTime, parseTimeToMilliseconds } = require("./helpers");
 const { keepaAPIKey } = require('../config.json');
 const { priceTypesMap } = require('./keepa.json');
-const cron  = require('node-schedule');
+const cron = require('node-schedule');
 const { setConfig, getConfig, setupGlobalTracking, isGlobalTrackingEnabled } = require("../database/models/config");
 const notify = require("../tracking/notify");
+const { processDBforDeals } = require("./apiHelpers");
 
 const fetchProducts = async (brand, priceType) => {
     const domains = await getBrandDomains(brand);
@@ -26,7 +27,7 @@ const fetchProducts = async (brand, priceType) => {
                 priceTypes: priceType,
                 dateRange: 0,
                 isRangeEnabled: true,
-                deltaPercentRange: [20, 100],
+                deltaPercentRange: [40, 100],
             };
 
             const url = `https://api.keepa.com/deal?key=${keepaAPIKey}&selection=${JSON.stringify(query)}`;
@@ -230,17 +231,17 @@ const processFinalData = (data) => {
     const result = {
         count: {},
         deals: [],
-        errorCount: {}, 
-        previousNumberOfDeals: 0, 
-        newNumberOfDeals: 0, 
+        errorCount: {},
+        previousNumberOfDeals: 0,
+        newNumberOfDeals: 0,
         categories: {},
         brand: data.brand,
     };
 
     const processedASINs = new Map();
 
-    result.previousNumberOfDeals = data.products.reduce((sum, product) => 
-        sum + product.data.products.reduce((domainSum, domainData) => 
+    result.previousNumberOfDeals = data.products.reduce((sum, product) =>
+        sum + product.data.products.reduce((domainSum, domainData) =>
             domainSum + domainData.deals.length, 0
         ), 0);
 
@@ -318,17 +319,16 @@ const fetchAndProcessProducts = async (brand) => {
     return processedData;
 }
 
-
 const brandTokenRequirements = {
-    'adidas': 100,  
+    'adidas': 100,
     'nike': 120
 };
 
 const MAX_TOKENS = 1200;
 
 let tokensLeft = MAX_TOKENS;
-let refillRate = 20;   
-let refillIn = 60;     
+let refillRate = 20;
+let refillIn = 60;
 let lastRefillTime = Date.now();
 let cronJob = null;
 
@@ -336,7 +336,7 @@ const refillTokens = () => {
     const now = Date.now();
     const minutesPassed = Math.floor((now - lastRefillTime) / 60000);
     const refilledTokens = minutesPassed * refillRate;
-    tokensLeft = Math.min(MAX_TOKENS, tokensLeft + refilledTokens); 
+    tokensLeft = Math.min(MAX_TOKENS, tokensLeft + refilledTokens);
     lastRefillTime = now;
     console.log(`Current tokens: ${tokensLeft}`);
 };
@@ -348,19 +348,18 @@ const hasEnoughTokens = (brand) => {
     return tokensLeft >= requiredTokens;
 };
 
-
 function setup() {
     initializeDatabase();
     setupGlobalTracking()
 }
 
-const createSchedule = async (brands, interval) => {
+const createSchedule = async (client, interval) => {
     const waitForTokens = async (brand) => {
         if (!isGlobalTrackingEnabled()) {
-            return ;
+            return;
         }
         const requiredTokens = brandTokenRequirements[brand] || 100;
-        
+
         if (tokensLeft >= requiredTokens) {
             return;
         }
@@ -377,7 +376,7 @@ const createSchedule = async (brands, interval) => {
 
     const processBrandsSequentially = async () => {
         while (true) {
-            if(!isGlobalTrackingEnabled()){
+            if (!isGlobalTrackingEnabled()) {
                 break;
             }
             let allBrandsData = getAllTrackedBrands();
@@ -387,31 +386,46 @@ const createSchedule = async (brands, interval) => {
             for (let i = 0; i < brandsNameData.length; i++) {
                 const brand = brandsNameData[i];
                 console.log(`Processing ${brand}...`);
-    
-                await waitForTokens(brand); 
-    
+
+                await waitForTokens(brand);
+
                 console.log(`Fetching: ${brand}...`);
+
                 const data = await fetchAndProcessProducts(brand);
-                for(let i = 0; i < data.result.deals.length; i++){
-                    notify(data.result.deals[i]);
+                // const processDB = processDBforDeals(brand, data.result.deals);
+
+                // if (!processDB) {
+                //     console.log(`Error processing ${brand}`);
+                //     continue;
+                // }
+
+                // const newDeals = processDB.newDeals;
+
+                // if (processDB.newDeals.length === 0) {
+                //     console.log(`No new deals for ${brand}`);
+                //     continue;
+                // }
+
+                for (let i = 0; i < data.result.deals.length; i++) {
+                    notify(client, data.result.deals[i]);
                     await new Promise(resolve => setTimeout(resolve, 1000));
-                    // console.log(data);
+                    // console.log(newDeals[i]);
                 }
-    
-                if (i < brands.length - 1) { // Don't wait after the last brand
+
+                if (i < brandsNameData.length - 1) { // Don't wait after the last brand
                     console.log(`Waiting for ${interval}ms`);
                     await new Promise(resolve => setTimeout(resolve, 100));
                 }
-    
-                if (i === brands.length - 1) {
+
+                if (i === brandsNameData.length - 1) {
                     setImmediate(() => {
                         console.log('Next round starting soon...');
                     });
                 }
             }
-    
+
             console.log('All brands processed.');
-            await new Promise(resolve => setTimeout(resolve, interval));  
+            await new Promise(resolve => setTimeout(resolve, interval));
 
             setImmediate(() => {
                 console.log('Starting the next round of brand processing...');
@@ -422,10 +436,7 @@ const createSchedule = async (brands, interval) => {
     await processBrandsSequentially();
 };
 
-function initPolling() {
-    setup();
-    createSchedule(['adidas'], parseTimeToMilliseconds('10 sec'));
-}
 module.exports = {
-    initPolling
+    setup,
+    createSchedule
 }

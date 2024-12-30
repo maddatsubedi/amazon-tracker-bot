@@ -1,9 +1,9 @@
 const { getRangeForDiscount } = require("../database/models/discount_range");
 const { getDealEmbed } = require("../embeds/dealsEmbeds");
-const processDealData = require("../utils/apiHelpers");
-const { priceTypesMap: priceTypesMapKeepa, priceTypesAccesor } = require('../utils/keepa.json')
+const { processDealData } = require("../utils/apiHelpers");
+const { priceTypesMap: priceTypesMapKeepa, priceTypesAccesor } = require('../utils/keepa.json');
 
-const notify = async (deal) => {
+const notify = async (client, deal) => {
 
     const processedDeal = processDealData(deal);
 
@@ -21,9 +21,9 @@ const notify = async (deal) => {
     const roleID = range.roleID;
     const channelID = range.channelID;
 
-    const dealEmbed = getDealEmbed(processedDeal, roleID);
+    const channel = await client.channels.fetch(channelID);
 
-    console.log(`Notified: ${processedDeal.title}`);
+    const dealEmbed = getDealEmbed(processedDeal, roleID);
 
 }
 

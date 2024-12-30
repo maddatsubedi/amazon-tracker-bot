@@ -5,7 +5,7 @@ const { config } = require('../utils/keepa.json');
 const { formatPrice } = require('../utils/helpers');
 const { getAllRanges, getRangeForDiscount } = require('../database/models/discount_range');
 
-const getDealEmbed = async (deal, roleId) => {
+const getDealMessage = async (deal, roleId) => {
 
     if (!deal) {
         return {
@@ -83,5 +83,5 @@ const getDealEmbed = async (deal, roleId) => {
 }
 
 module.exports = {
-    getDealEmbed
+    getDealMessage
 }

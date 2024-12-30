@@ -1,4 +1,4 @@
-const { getAvailabeLocales } = require("../../utils/helpers");
+const { getAvailabeLocales, formatKeepaDate } = require("../../utils/helpers");
 const db = require("../db");
 
 const createBrandsTable = () => {
@@ -20,7 +20,6 @@ const createAsinsTable = () => {
         CREATE TABLE IF NOT EXISTS asins (
             asin TEXT PRIMARY KEY,
             brand_id INTEGER NOT NULL,
-            tracking BOOLEAN DEFAULT 0, -- 0 for not tracking, 1 for tracking (deprecated for brand-level)
             added_at TEXT NOT NULL, -- Date when the ASIN was added (ISO string format)
             expires_at TEXT, -- Date when the ASIN deal expires (optional)
             deal_created_at TEXT, -- Date when the deal was created (optional)
@@ -35,10 +34,10 @@ const initializeDatabase = () => {
   createBrandsTable();
   createAsinsTable();
 
-//   if database is large, uncomment this
+  //   if database is large, uncomment this
 
-//   db.prepare('CREATE INDEX IF NOT EXISTS idx_brand_id ON asins (brand_id)').run();
-//     db.prepare('CREATE INDEX IF NOT EXISTS idx_asin ON asins (asin)').run();
+  //   db.prepare('CREATE INDEX IF NOT EXISTS idx_brand_id ON asins (brand_id)').run();
+  //     db.prepare('CREATE INDEX IF NOT EXISTS idx_asin ON asins (asin)').run();
 };
 
 const insertBrand = (brandName, domains = "", tracking = 0) => {
@@ -68,8 +67,7 @@ const addDomainToBrand = (brandName, domain) => {
   }
 };
 
-const insertAsins = (brandName, asins, type = "normal") => {
-  const brand = insertBrand(brandName);
+const insertAsins = (brand_id, deals, expiresAt, type = "normal") => {
   const duplicateAsins = [];
   const errorAsins = [];
   const successfulAsins = [];
@@ -79,35 +77,36 @@ const insertAsins = (brandName, asins, type = "normal") => {
     `);
 
   const currentDate = new Date().toUTCString();
-  const transaction = db.transaction((asins) => {
-    asins.forEach((asin) => {
+  const transaction = db.transaction((deals) => {
+    deals.forEach((deal) => {
       try {
         const result = stmt.run(
-          asin.asin,
-          brand.id,
+          deal.asin,
+          brand_id,
           currentDate,
-          asin.expiresAt || null,
-          asin.dealCreatedAt || null,
-          asin.type || type
+          expiresAt,
+          formatKeepaDate(deal.creationDate),
+          type
         );
         if (result.changes === 0) {
-          duplicateAsins.push(asin.asin);
+          duplicateAsins.push(deal.asin);
         } else {
-          successfulAsins.push(asin.asin);
+          successfulAsins.push(deal.asin);
         }
       } catch (error) {
-        console.error("Error inserting ASIN:", asin.asin, error);
-        errorAsins.push({ asin: asin.asin, error: error.message });
+        console.error("Error inserting ASIN:", deal.asin, error);
+        errorAsins.push({ asin: deal.asin, error: error.message });
       }
     });
   });
-  transaction(asins);
+
+  transaction(deals);
 
   const success = successfulAsins.length > 0;
 
   const totalAsinsCount = db
     .prepare("SELECT COUNT(*) as count FROM asins WHERE brand_id = ?")
-    .get(brand.id).count;
+    .get(brand_id).count;
 
   return {
     success,
@@ -115,11 +114,35 @@ const insertAsins = (brandName, asins, type = "normal") => {
     duplicateAsinsCount: duplicateAsins.length,
     errorAsinsCount: errorAsins.length,
     totalAsinsCount,
+    successfulAsins,
   };
 };
 
+const removeExpiredAsins = () => {
+  const currentDate = new Date();
+
+  const expiredAsins = db.prepare(
+    "SELECT asin, expires_at FROM asins WHERE expires_at IS NOT NULL"
+  ).all();
+
+  const expiredAsinsToDelete = expiredAsins.filter((asinData) => {
+    const expiresAtDate = new Date(asinData.expires_at);
+    return expiresAtDate < currentDate;
+  });
+
+  if (expiredAsinsToDelete.length > 0) {
+    const expiredAsinsList = expiredAsinsToDelete.map((asinData) => asinData.asin);
+    
+    db.prepare(
+      "DELETE FROM asins WHERE asin IN (" + expiredAsinsList.map(() => "?").join(",") + ")"
+    ).run(...expiredAsinsList);
+  }
+
+  return expiredAsinsToDelete;
+};
+
 const updatePriceLastUpdated = (asin) => {
-  const currentDate = new Date().toISOString(); // Get current date in ISO string format
+  const currentDate = new Date().toISOString();
   db.prepare(
     `
         UPDATE asins SET added_at = ? WHERE asin = ?
@@ -189,12 +212,17 @@ const getBrandDomains = async (brandName) => {
   return brand ? brand.domains.split(",").filter(Boolean) : [];
 };
 
+const getBrandFromName = (brandName) => {
+  return db.prepare("SELECT * FROM brands WHERE name = ?").get(brandName);
+}
+
 module.exports = {
   createBrandsTable,
   createAsinsTable,
   insertBrand,
   addDomainToBrand,
   insertAsins,
+  removeExpiredAsins,
   updatePriceLastUpdated,
   setTrackingForBrand,
   getAsinsForBrand,
@@ -203,5 +231,6 @@ module.exports = {
   deleteBrandAndAsins,
   getBrandDomains,
   initializeDatabase,
-  getAllTrackedBrands
+  getAllTrackedBrands,
+  getBrandFromName,
 };

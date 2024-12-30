@@ -400,24 +400,24 @@ async function pollingMain(client, interval) {
                 const data = await fetchAndProcessProducts(brand);
                 console.log(`Processing: ${brand} with ${data.result.deals.length} deals...`);
 
-                // const processDB = processDBforDeals(brand, data.result.deals);
+                const processDB = processDBforDeals(brand, data.result.deals);
 
-                // if (!processDB) {
-                //     console.log(`Error processing ${brand}`);
-                //     continue;
-                // }
+                if (!processDB) {
+                    console.log(`Error processing ${brand}`);
+                    continue;
+                }
 
-                // const newDeals = processDB.newDeals;
+                const newDeals = processDB.newDeals;
 
-                // if (processDB.newDeals.length === 0) {
-                //     console.log(`No new deals for ${brand}`);
-                //     continue;
-                // }
+                if (processDB.newDeals.length === 0) {
+                    console.log(`No new deals for ${brand}`);
+                    continue;
+                }
 
-                // console.log(`Notifying ${newDeals.length} new deals for ${brand}...`);
+                console.log(`Notifying ${newDeals.length} new deals for ${brand}...`);
 
-                for (let i = 0; i < data.result.deals.length; i++) {
-                    notify(client, data.result.deals[i]);
+                for (let i = 0; i < newDeals.length; i++) {
+                    notify(client, newDeals[i]);
                     await new Promise(resolve => setTimeout(resolve, 2000)); // 2 seconds
                     // console.log(newDeals[i]);
                 }

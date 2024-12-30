@@ -5,7 +5,7 @@ const { priceTypesMap } = require('./keepa.json');
 const cron = require('node-schedule');
 const { setConfig, getConfig, setupGlobalTracking, isGlobalTrackingEnabled } = require("../database/models/config");
 const notify = require("../tracking/notify");
-const { processDBforDeals } = require("./apiHelpers");
+const { processDBforDeals, getTokensData } = require("./apiHelpers");
 
 const fetchProducts = async (brand, priceType) => {
     const domains = await getBrandDomains(brand);
@@ -326,19 +326,20 @@ const brandTokenRequirements = {
 
 const MAX_TOKENS = 1200;
 
-let tokensLeft = MAX_TOKENS;
-let refillRate = 20;
-let refillIn = 60;
+let tokenData = getTokensData()
+
+let tokensLeft = tokenData.tokensLeft;
+let refillRate = tokenData.refillIn;
+let refillIn = tokenData.refillRate;
 let lastRefillTime = Date.now();
 let cronJob = null;
 
 const refillTokens = () => {
-    const now = Date.now();
-    const minutesPassed = Math.floor((now - lastRefillTime) / 60000);
-    const refilledTokens = minutesPassed * refillRate;
-    tokensLeft = Math.min(MAX_TOKENS, tokensLeft + refilledTokens);
-    lastRefillTime = now;
-    console.log(`Current tokens: ${tokensLeft}`);
+    let tokenData = getTokensData()
+    tokensLeft = tokenData.tokensLeft;
+    refillRate = tokenData.refillIn;
+    refillIn = tokenData.refillRate;
+    lastRefillTime = Date.now();
 };
 
 setInterval(refillTokens, 60000);

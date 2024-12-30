@@ -1,10 +1,11 @@
-const { getBrandDomains, initializeDatabase } = require("../database/models/asins");
-const { getKeepaTimeMinutes, getDomainIDs, formatPrice, getDomainLocaleByDomainID } = require("../utils/helpers");
+const { getBrandDomains, initializeDatabase, getAllBrands, getAllTrackedBrands } = require("../database/models/asins");
+const { getKeepaTimeMinutes, getDomainIDs, formatPrice, getDomainLocaleByDomainID, getRefillTime, calculateTokensRefillTime ,parseTimeToMilliseconds} = require("./helpers");
 const { keepaAPIKey } = require('../config.json');
-const { priceTypesMap } = require('../utils/keepa.json');
-const processDealData = require("./apiHelpers");
+const { priceTypesMap } = require('./keepa.json');
+const cron  = require('node-schedule');
+const { setConfig, getConfig, setupGlobalTracking, isGlobalTrackingEnabled } = require("../database/models/config");
+const notify = require("../tracking/notify");
 
-// filepath: /d:/company/amazon-tracker-bot/test.js
 const fetchProducts = async (brand, priceType) => {
     const domains = await getBrandDomains(brand);
     const domainIds = getDomainIDs(domains);
@@ -34,7 +35,7 @@ const fetchProducts = async (brand, priceType) => {
                 const response = await fetch(url);
 
                 if (!response.ok) {
-                    console.log(await response.json());
+                    console.log('FETCH_ERROR');
                     errors.push('FETCH_ERROR');
                     break;
                 }
@@ -86,56 +87,56 @@ const fetchProducts = async (brand, priceType) => {
                     };
 
                     const amazonStat = {
-                        currentPrice: deal.current[0] <= 0 ? null : deal.current[0],
-                        avgDay: deal.avg[0][0] <= 0 ? null : deal.avg[0][0],
-                        avgWeek: deal.avg[1][0] <= 0 ? null : deal.avg[1][0],
-                        avgMonth: deal.avg[2][0] <= 0 ? null : deal.avg[2][0],
+                        currentPrice: deal.current[0] <= 0 ? null : formatPrice(deal.current[0], domainId),
+                        avgDay: deal.avg[0][0] <= 0 ? null : formatPrice(deal.avg[0][0], domainId),
+                        avgWeek: deal.avg[1][0] <= 0 ? null : formatPrice(deal.avg[1][0], domainId),
+                        avgMonth: deal.avg[2][0] <= 0 ? null : formatPrice(deal.avg[2][0], domainId),
                         percentageDropDay: deal.deltaPercent[0][0] <= 0 ? null : deal.deltaPercent[0][0],
                         percentageDropWeek: deal.deltaPercent[1][0] <= 0 ? null : deal.deltaPercent[1][0],
                         percentageDropMonth: deal.deltaPercent[2][0] <= 0 ? null : deal.deltaPercent[2][0],
-                        dropDay: deal.delta[0][0] <= 0 ? null : deal.delta[0][0],
-                        dropWeek: deal.delta[1][0] <= 0 ? null : deal.delta[1][0],
-                        dropMonth: deal.delta[2][0] <= 0 ? null : deal.delta[2][0],
+                        dropDay: deal.delta[0][0] <= 0 ? null : formatPrice(deal.delta[0][0], domainId),
+                        dropWeek: deal.delta[1][0] <= 0 ? null : formatPrice(deal.delta[1][0], domainId),
+                        dropMonth: deal.delta[2][0] <= 0 ? null : formatPrice(deal.delta[2][0], domainId),
                     };
 
                     const newStat = {
-                        currentPrice: deal.current[1] <= 0 ? null : deal.current[1],
-                        avgDay: deal.avg[0][1] <= 0 ? null : deal.avg[0][1],
-                        avgWeek: deal.avg[1][1] <= 0 ? null : deal.avg[1][1],
-                        avgMonth: deal.avg[2][1] <= 0 ? null : deal.avg[2][1],
+                        currentPrice: deal.current[1] <= 0 ? null : formatPrice(deal.current[1], domainId),
+                        avgDay: deal.avg[0][1] <= 0 ? null : formatPrice(deal.avg[0][1], domainId),
+                        avgWeek: deal.avg[1][1] <= 0 ? null : formatPrice(deal.avg[1][1], domainId),
+                        avgMonth: deal.avg[2][1] <= 0 ? null : formatPrice(deal.avg[2][1], domainId),
                         percentageDropDay: deal.deltaPercent[0][1] <= 0 ? null : deal.deltaPercent[0][1],
                         percentageDropWeek: deal.deltaPercent[1][1] <= 0 ? null : deal.deltaPercent[1][1],
                         percentageDropMonth: deal.deltaPercent[2][1] <= 0 ? null : deal.deltaPercent[2][1],
-                        dropDay: deal.delta[0][1] <= 0 ? null : deal.delta[0][1],
-                        dropWeek: deal.delta[1][1] <= 0 ? null : deal.delta[1][1],
-                        dropMonth: deal.delta[2][1] <= 0 ? null : deal.delta[2][1],
+                        dropDay: deal.delta[0][1] <= 0 ? null : formatPrice(deal.delta[0][1], domainId),
+                        dropWeek: deal.delta[1][1] <= 0 ? null : formatPrice(deal.delta[1][1], domainId),
+                        dropMonth: deal.delta[2][1] <= 0 ? null : formatPrice(deal.delta[2][1], domainId),
                     };
 
                     // 🔴 DO NOT REMOVE
                     // const usedStat = {
-                    //     currentPrice: deal.current[2] <= 0 ? null : deal.current[2],
-                    //     avgDay: deal.avg[0][2] <= 0 ? null : deal.avg[0][2],
-                    //     avgWeek: deal.avg[1][2] <= 0 ? null : deal.avg[1][2],
-                    //     avgMonth: deal.avg[2][2] <= 0 ? null : deal.avg[2][2],
+                    //     currentPrice: deal.current[2] <= 0 ? null : formatPrice(deal.current[2], domainId),
+                    //     avgDay: deal.avg[0][2] <= 0 ? null : formatPrice(deal.avg[0][2], domainId),
+                    //     avgWeek: deal.avg[1][2] <= 0 ? null : formatPrice(deal.avg[1][2], domainId),
+                    //     avgMonth: deal.avg[2][2] <= 0 ? null : formatPrice(deal.avg[2][2], domainId),
                     //     percentageDropDay: deal.deltaPercent[0][2] <= 0 ? null : deal.deltaPercent[0][2],
                     //     percentageDropWeek: deal.deltaPercent[1][2] <= 0 ? null : deal.deltaPercent[1][2],
                     //     percentageDropMonth: deal.deltaPercent[2][2] <= 0 ? null : deal.deltaPercent[2][2],
-                    //     dropDay: deal.delta[0][2] <= 0 ? null : deal.delta[0][2],
-                    //     dropWeek: deal.delta[1][2] <= 0 ? null : deal.delta[1][2],
-                    //     dropMonth: deal.delta[2][2] <= 0 ? null : deal.delta[2][2],
+                    //     dropDay: deal.delta[0][2] <= 0 ? null : formatPrice(deal.delta[0][2], domainId),
+                    //     dropWeek: deal.delta[1][2] <= 0 ? null : formatPrice(deal.delta[1][2], domainId),
+                    //     dropMonth: deal.delta[2][2] <= 0 ? null : formatPrice(deal.delta[2][2], domainId),
                     // };
 
                     const buyBoxStat = {
-                        currentPrice: deal.current[18] <= 0 ? null : deal.current[18],
-                        avgDay: deal.avg[0][18] <= 0 ? null : deal.avg[0][18],
-                        avgWeek: deal.avg[1][18] <= 0 ? null : deal.avg[1][18],
-                        avgMonth: deal.avg[2][18] <= 0 ? null : deal.avg[2][18],
+                        currentPrice: deal.current[18] <= 0 ? null : formatPrice(deal.current[18], domainId),
+                        avgDay: deal.avg[0][18] <= 0 ? null : formatPrice(deal.avg[0][18], domainId),
+                        avgWeek: deal.avg[1][18] <= 0 ? null : formatPrice(deal.avg[1][18], domainId),
+                        avgMonth: deal.avg[2][18] <= 0 ? null : formatPrice(deal.avg[2][18], domainId),
                         percentageDropDay: deal.deltaPercent[0][18] <= 0 ? null : deal.deltaPercent[0][18],
                         percentageDropWeek: deal.deltaPercent[1][18] <= 0 ? null : deal.deltaPercent[1][18],
                         percentageDropMonth: deal.deltaPercent[2][18] <= 0 ? null : deal.deltaPercent[2][18],
-                        dropDay: deal.delta[0][18] <= 0 ? null : deal.delta[0][18],
-                        dropWeek: deal.delta[1][18] <= 0 ? null : deal.delta[1][18],
-                        dropMonth: deal.delta[2][18] <= 0 ? null : deal.delta[2][18],
+                        dropDay: deal.delta[0][18] <= 0 ? null : formatPrice(deal.delta[0][18], domainId),
+                        dropWeek: deal.delta[1][18] <= 0 ? null : formatPrice(deal.delta[1][18], domainId),
+                        dropMonth: deal.delta[2][18] <= 0 ? null : formatPrice(deal.delta[2][18], domainId),
                     };
 
                     dealStat.amazonStat = amazonStat;
@@ -317,23 +318,114 @@ const fetchAndProcessProducts = async (brand) => {
     return processedData;
 }
 
+
+const brandTokenRequirements = {
+    'adidas': 100,  
+    'nike': 120
+};
+
+const MAX_TOKENS = 1200;
+
+let tokensLeft = MAX_TOKENS;
+let refillRate = 20;   
+let refillIn = 60;     
+let lastRefillTime = Date.now();
+let cronJob = null;
+
+const refillTokens = () => {
+    const now = Date.now();
+    const minutesPassed = Math.floor((now - lastRefillTime) / 60000);
+    const refilledTokens = minutesPassed * refillRate;
+    tokensLeft = Math.min(MAX_TOKENS, tokensLeft + refilledTokens); 
+    lastRefillTime = now;
+    console.log(`Current tokens: ${tokensLeft}`);
+};
+
+setInterval(refillTokens, 60000);
+
+const hasEnoughTokens = (brand) => {
+    const requiredTokens = brandTokenRequirements[brand] || 100;
+    return tokensLeft >= requiredTokens;
+};
+
+
 function setup() {
     initializeDatabase();
+    setupGlobalTracking()
 }
 
-function main() {
-    const startTime = Date.now();
-    setup();
-    fetchAndProcessProducts('Ralph Lauren').then(() => {
-        const endTime = Date.now();
-        const timeTaken = endTime - startTime;
-        console.log(`Time taken: ${timeTaken}ms`);
-    });
-}
+const createSchedule = async (brands, interval) => {
+    const waitForTokens = async (brand) => {
+        if (!isGlobalTrackingEnabled()) {
+            return ;
+        }
+        const requiredTokens = brandTokenRequirements[brand] || 100;
+        
+        if (tokensLeft >= requiredTokens) {
+            return;
+        }
 
-main();
+        const refillTime = calculateTokensRefillTime(refillRate, refillIn, tokensLeft, requiredTokens);
+        const refillTimeInMs = parseTimeToMilliseconds(refillTime);
 
-module.exports = {
-    fetchAndProcessProducts,
-    setup,
+        console.log(`Not enough:${brand}. refil time ${refillTime}.`);
+        await new Promise(resolve => setTimeout(resolve, refillTimeInMs));
+
+        // Recursively check if tokens are now available
+        return waitForTokens(brand);
+    };
+
+    const processBrandsSequentially = async () => {
+        while (true) {
+            if(!isGlobalTrackingEnabled()){
+                break;
+            }
+            let allBrandsData = getAllTrackedBrands();
+            let brandsNameData = allBrandsData.map(brand => brand.name);
+            console.log(brandsNameData);
+
+            for (let i = 0; i < brandsNameData.length; i++) {
+                const brand = brandsNameData[i];
+                console.log(`Processing ${brand}...`);
+    
+                await waitForTokens(brand); 
+    
+                console.log(`Fetching: ${brand}...`);
+                const data = await fetchAndProcessProducts(brand);
+                for(let i = 0; i < data.result.deals.length; i++){
+                    notify(data.result.deals[i]);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    // console.log(data);
+                }
+    
+                if (i < brands.length - 1) { // Don't wait after the last brand
+                    console.log(`Waiting for ${interval}ms`);
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+    
+                if (i === brands.length - 1) {
+                    setImmediate(() => {
+                        console.log('Next round starting soon...');
+                    });
+                }
+            }
+    
+            console.log('All brands processed.');
+            await new Promise(resolve => setTimeout(resolve, interval));  
+
+            setImmediate(() => {
+                console.log('Starting the next round of brand processing...');
+            });
+        }
+    };
+
+    await processBrandsSequentially();
 };
+
+function initPolling() {
+    setup();
+    createSchedule(['adidas'], parseTimeToMilliseconds('10 sec'));
+}
+module.exports = {
+    initPolling
+}

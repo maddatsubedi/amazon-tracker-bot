@@ -55,7 +55,7 @@ const processDealData = (deal) => {
     return data;
 }
 
-const getTokensData = async (tokens) => {
+const getTokensData = async () => {
     const url = `https://api.keepa.com/query?key=${keepaAPIKey}`;
     const response = await fetch(url);
 

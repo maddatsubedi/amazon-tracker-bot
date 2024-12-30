@@ -14,6 +14,7 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply();
 
+        // await interaction.channel.send('');
         return await interaction.editReply('Pong!');
     },
 };

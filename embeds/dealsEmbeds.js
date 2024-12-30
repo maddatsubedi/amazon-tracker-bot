@@ -51,11 +51,13 @@ const getDealMessage = async (deal, roleId) => {
         .setTitle(`Nouveau Deal  :  ${flagEmojis.join(' ')}`)
         .setDescription(`**[${deal.title}](https://www.amazon.fr/dp/${deal.asin})**`)
         .addFields(
-            { name: 'Prix actuel', value: `> **${deal[maxPriceAccesors[0]].currentPrice ? formatPrice(deal[maxPriceAccesors[0]].currentPrice, deal.domains[0]) : 'N/A'}**` },
-            { name: 'Ancien prix', value: `> **${(deal[maxPriceAccesors[0]].currentPrice && deal[maxPriceAccesors[0]].dropDay) ? formatPrice((deal[maxPriceAccesors[0]].currentPrice + deal[maxPriceAccesors[0]].dropDay), deal.domains[0]) : 'N/A'}**` },
-            { name: 'Déduction :arrow_down:', value: `> **${deal[maxPriceAccesors[0]].percentageDropDay ? `${deal[maxPriceAccesors[0]].percentageDropDay} %` : 'N/A'}**` },
+            { name: 'Prix actuel', value: `> **${deal[maxPriceAccesors[0]].currentPrice ? deal[maxPriceAccesors[0]].currentPrice : 'N/A'}**` },
+            { name: 'Ancien prix', value: `> **${deal[maxPriceAccesors[0]].previousPriceDay ? deal[maxPriceAccesors[0]].previousPriceDay : 'N/A'}**` },
+            { name: 'Réduction :arrow_down:', value: `> **${deal[maxPriceAccesors[0]].percentageDropDay ? `${deal[maxPriceAccesors[0]].percentageDropDay} %` : 'N/A'}**` },
             { name: 'Prix réduits', value: `> \`${priceTypesString}\`` }
         )
+
+    // console.log(deal.productUrls);
 
     const dealButtonRow = new ActionRowBuilder()
         .addComponents(
@@ -69,9 +71,12 @@ const getDealMessage = async (deal, roleId) => {
         );
 
     const message = {
-        content: `<@&${roleId}>`,
         embeds: [dealEmbed],
         components: [dealButtonRow]
+    }
+
+    if (roleId) {
+        message.content = `<@&${roleId}>`
     }
 
     if (productGraphAttachment) {
@@ -79,7 +84,6 @@ const getDealMessage = async (deal, roleId) => {
     }
 
     return message;
-
 }
 
 module.exports = {

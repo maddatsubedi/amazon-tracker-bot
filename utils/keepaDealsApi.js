@@ -89,6 +89,7 @@ const fetchProducts = async (brand, priceType) => {
 
                     const amazonStat = {
                         currentPrice: deal.current[0] <= 0 ? null : formatPrice(deal.current[0], domainId),
+                        previousPriceDay: (deal.current[0] <= 0 && deal.delta[0][0] <= 0) ? null : formatPrice((deal.current[0] + deal.delta[0][0]), domainId),
                         avgDay: deal.avg[0][0] <= 0 ? null : formatPrice(deal.avg[0][0], domainId),
                         avgWeek: deal.avg[1][0] <= 0 ? null : formatPrice(deal.avg[1][0], domainId),
                         avgMonth: deal.avg[2][0] <= 0 ? null : formatPrice(deal.avg[2][0], domainId),
@@ -102,6 +103,7 @@ const fetchProducts = async (brand, priceType) => {
 
                     const newStat = {
                         currentPrice: deal.current[1] <= 0 ? null : formatPrice(deal.current[1], domainId),
+                        previousPriceDay: (deal.current[1] <= 0 && deal.delta[0][1] <= 0) ? null : formatPrice((deal.current[1] + deal.delta[0][1]), domainId),
                         avgDay: deal.avg[0][1] <= 0 ? null : formatPrice(deal.avg[0][1], domainId),
                         avgWeek: deal.avg[1][1] <= 0 ? null : formatPrice(deal.avg[1][1], domainId),
                         avgMonth: deal.avg[2][1] <= 0 ? null : formatPrice(deal.avg[2][1], domainId),
@@ -116,6 +118,7 @@ const fetchProducts = async (brand, priceType) => {
                     // 🔴 DO NOT REMOVE
                     // const usedStat = {
                     //     currentPrice: deal.current[2] <= 0 ? null : formatPrice(deal.current[2], domainId),
+                    //     previousPriceDay: (deal.current[2] <= 0 && deal.delta[0][2] <= 0) ? null : formatPrice((deal.current[2] + deal.delta[0][2]), domainId),
                     //     avgDay: deal.avg[0][2] <= 0 ? null : formatPrice(deal.avg[0][2], domainId),
                     //     avgWeek: deal.avg[1][2] <= 0 ? null : formatPrice(deal.avg[1][2], domainId),
                     //     avgMonth: deal.avg[2][2] <= 0 ? null : formatPrice(deal.avg[2][2], domainId),
@@ -129,6 +132,7 @@ const fetchProducts = async (brand, priceType) => {
 
                     const buyBoxStat = {
                         currentPrice: deal.current[18] <= 0 ? null : formatPrice(deal.current[18], domainId),
+                        previousPriceDay: (deal.current[18] <= 0 && deal.delta[0][18] <= 0) ? null : formatPrice((deal.current[18] - deal.delta[0][18]), domainId),
                         avgDay: deal.avg[0][18] <= 0 ? null : formatPrice(deal.avg[0][18], domainId),
                         avgWeek: deal.avg[1][18] <= 0 ? null : formatPrice(deal.avg[1][18], domainId),
                         avgMonth: deal.avg[2][18] <= 0 ? null : formatPrice(deal.avg[2][18], domainId),
@@ -324,37 +328,38 @@ const brandTokenRequirements = {
     'nike': 120
 };
 
-const MAX_TOKENS = 1200;
-
-let tokenData = getTokensData()
-
-let tokensLeft = tokenData.tokensLeft;
-let refillRate = tokenData.refillIn;
-let refillIn = tokenData.refillRate;
-let lastRefillTime = Date.now();
-let cronJob = null;
-
-const refillTokens = () => {
-    let tokenData = getTokensData()
-    tokensLeft = tokenData.tokensLeft;
-    refillRate = tokenData.refillIn;
-    refillIn = tokenData.refillRate;
-    lastRefillTime = Date.now();
-};
-
-setInterval(refillTokens, 60000);
+function setup() {
+    initializeDatabase();
+    setupGlobalTracking()
+}
 
 const hasEnoughTokens = (brand) => {
     const requiredTokens = brandTokenRequirements[brand] || 100;
     return tokensLeft >= requiredTokens;
 };
 
-function setup() {
-    initializeDatabase();
-    setupGlobalTracking()
-}
+async function pollingMain(client, interval) {
+    const MAX_TOKENS = 1200;
 
-const createSchedule = async (client, interval) => {
+    let tokenData = await getTokensData();
+
+    let tokensLeft = tokenData.tokensLeft;
+    let refillRate = tokenData.refillIn;
+    let refillIn = tokenData.refillRate;
+    let lastRefillTime = Date.now();
+    let cronJob = null;
+
+    const refillTokens = async () => {
+        let tokenData = await getTokensData()
+        tokensLeft = tokenData.tokensLeft;
+        refillRate = tokenData.refillIn;
+        refillIn = tokenData.refillRate;
+        lastRefillTime = Date.now();
+    };
+
+    setInterval(refillTokens, 60000);
+    // setInterval(refillTokens, 60000);
+
     const waitForTokens = async (brand) => {
         if (!isGlobalTrackingEnabled()) {
             return;
@@ -393,6 +398,8 @@ const createSchedule = async (client, interval) => {
                 console.log(`Fetching: ${brand}...`);
 
                 const data = await fetchAndProcessProducts(brand);
+                console.log(`Processing: ${brand} with ${data.result.deals.length} deals...`);
+
                 // const processDB = processDBforDeals(brand, data.result.deals);
 
                 // if (!processDB) {
@@ -407,9 +414,11 @@ const createSchedule = async (client, interval) => {
                 //     continue;
                 // }
 
+                // console.log(`Notifying ${newDeals.length} new deals for ${brand}...`);
+
                 for (let i = 0; i < data.result.deals.length; i++) {
                     notify(client, data.result.deals[i]);
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    await new Promise(resolve => setTimeout(resolve, 2000)); // 2 seconds
                     // console.log(newDeals[i]);
                 }
 
@@ -435,9 +444,9 @@ const createSchedule = async (client, interval) => {
     };
 
     await processBrandsSequentially();
-};
+}
 
 module.exports = {
     setup,
-    createSchedule
+    pollingMain
 }

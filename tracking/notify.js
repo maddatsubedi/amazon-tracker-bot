@@ -1,5 +1,5 @@
 const { getRangeForDiscount } = require("../database/models/discount_range");
-const { getDealEmbed } = require("../embeds/dealsEmbeds");
+const { getDealMessage } = require("../embeds/dealsEmbeds");
 const { processDealData } = require("../utils/apiHelpers");
 const { priceTypesMap: priceTypesMapKeepa, priceTypesAccesor } = require('../utils/keepa.json');
 
@@ -23,7 +23,9 @@ const notify = async (client, deal) => {
 
     const channel = await client.channels.fetch(channelID);
 
-    const dealEmbed = getDealEmbed(processedDeal, roleID);
+    const dealEmbed = getDealMessage(processedDeal, roleID);
+
+    await channel.send({ embeds: [dealEmbed] });
 
 }
 

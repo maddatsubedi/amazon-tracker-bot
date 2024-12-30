@@ -35,7 +35,7 @@ const fetchProducts = async (brand, priceType) => {
                 const response = await fetch(url);
 
                 if (!response.ok) {
-                    console.log(await response.json());
+                    console.log('FETCH_ERROR');
                     errors.push('FETCH_ERROR');
                     break;
                 }
@@ -315,9 +315,9 @@ const processFinalData = (data) => {
 const fetchAndProcessProducts = async (brand) => {
     const data = await fetchProductsOfAllPricesTypes(brand);
     const processedData = processFinalData(data);
-    console.log(processedData);
-    console.log(processedData.result.deals[0]);
-    console.log(processedData.tokensData);
+    // console.log(processedData);
+    // console.log(processedData.result.deals[0]);
+    // console.log(processedData.tokensData);
     return processedData;
 }
 
@@ -398,7 +398,7 @@ const createSchedule = async (brands, interval) => {
                 for(let i = 0; i < data.result.deals.length; i++){
                     notify(data.result.deals[i]);
                     await new Promise(resolve => setTimeout(resolve, 1000));
-                    console.log(data);
+                    // console.log(data);
                 }
     
                 if (i < brands.length - 1) { // Don't wait after the last brand

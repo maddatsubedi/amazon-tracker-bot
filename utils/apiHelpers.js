@@ -1,6 +1,8 @@
 const { IMAGE_BASE_URL } = require('./amazon.json');
 const { priceTypesMap: priceTypesMapKeepa, priceTypesAccesor } = require('./keepa.json')
 const { getDealImage, formatKeepaDate, getDomainLocaleByDomainID } = require('./helpers');
+const { keepaAPIKey } = require('../config.json');
+const { getBrandFromName, removeExpiredAsins, insertAsins } = require('../database/models/asins');
 
 const processDealData = (deal) => {
 
@@ -53,4 +55,55 @@ const processDealData = (deal) => {
     return data;
 }
 
-module.exports = processDealData;
+const getTokensData = async (tokens) => {
+    const url = `https://api.keepa.com/query?key=${keepaAPIKey}`;
+    const response = await fetch(url);
+
+    const data = await response?.json();
+
+    if (!data || !data.timestamp) {
+        return {
+            error: 'API_ERROR',
+        }
+    }
+
+    const tokensLeft = data.tokensLeft;
+    const refillIn = data.refillIn;
+    const refillRate = data.refillRate;
+
+    return {
+        tokensLeft,
+        refillIn,
+        refillRate,
+    }
+}
+
+// getTokensData().then(console.log);
+
+const processDBforDeals = (brand, deals) => {
+    const brandData = getBrandFromName(brand);
+    const dealsExpiresAt = new Date(new Date().setDate(new Date().getDate() + 2)).toUTCString();
+
+    const removeAsins = removeExpiredAsins();
+    const expiredAsins = removeAsins.map(asin => asin.asin); 
+    const addAsins = insertAsins(brandData?.id, deals, dealsExpiresAt, 'deal');
+
+    const newDeals = deals.filter(deal => addAsins.successfulAsins.includes(deal.asin));
+
+    return {
+        expiredAsinsCount: removeAsins.length,
+        newAsinsCount: addAsins.successfulAsinsCount,
+        duplicateAsinsCount: addAsins.duplicateAsinsCount,
+        errorAsinsCount: addAsins.errorAsinsCount,
+        totalAsinsCount: addAsins.totalAsinsCount,
+        newAsins: addAsins.successfulAsins,
+        expiredAsins: expiredAsins,
+        newDeals: newDeals,
+    }
+}
+
+module.exports = {
+    processDealData,
+    getTokensData,
+    processDBforDeals,
+ };

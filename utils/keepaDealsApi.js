@@ -155,7 +155,7 @@ const fetchProducts = async (brand, priceType) => {
                 page++;
             } catch (error) {
                 console.log(error);
-                errors.push('FETCH_ERROR');
+                errors.push('EXCEPTION_ERROR');
                 break;
             }
         }
@@ -322,10 +322,20 @@ const fetchAndProcessProducts = async (brand) => {
     return processedData;
 }
 
-const brandTokenRequirements = {
-    'adidas': 100,
-    'nike': 120
+const brandTokensRequirements = {
+    'adidas': 70,
+    'nike': 80
 };
+
+const defaultTokensRequirements = 85;
+
+const tokensRefillInterval = 5000; // 5 seconds
+
+const tokensWaitFallback = 1250; // 1.25 seconds
+
+const notifyInterval = 2000; // 2 seconds
+
+const brandPollingInterval = 100; // 100ms
 
 function setup() {
     initializeDatabase();
@@ -333,38 +343,38 @@ function setup() {
 }
 
 const hasEnoughTokens = (brand) => {
-    const requiredTokens = brandTokenRequirements[brand] || 100;
+    const requiredTokens = brandTokensRequirements[brand] || defaultTokensRequirements;
     return tokensLeft >= requiredTokens;
 };
 
-async function pollingMain(client, interval) {
+async function pollingMain(interval) {
     const MAX_TOKENS = 1200;
 
     let tokenData = await getTokensData();
 
     let tokensLeft = tokenData.tokensLeft;
-    let refillRate = tokenData.refillIn;
-    let refillIn = tokenData.refillRate;
+    let refillRate = tokenData.refillRate;
+    let refillIn = tokenData.refillIn;
     let lastRefillTime = Date.now();
     let cronJob = null;
 
     const refillTokens = async () => {
         let tokenData = await getTokensData()
         tokensLeft = tokenData.tokensLeft;
-        refillRate = tokenData.refillIn;
-        refillIn = tokenData.refillRate;
+        refillRate = tokenData.refillRate;
+        refillIn = tokenData.refillIn;
         lastRefillTime = Date.now();
     };
 
-    setInterval(refillTokens, 10000);
-    // setInterval(refillTokens, 60000);
+    setInterval(refillTokens, tokensRefillInterval);
 
     const waitForTokens = async (brand) => {
         if (!isGlobalTrackingEnabled()) {
             return;
         }
-        const requiredTokens = brandTokenRequirements[brand] || 100;
+        const requiredTokens = brandTokensRequirements[brand] || defaultTokensRequirements;
 
+        await refillTokens();
         if (tokensLeft >= requiredTokens) {
             return;
         }
@@ -372,8 +382,16 @@ async function pollingMain(client, interval) {
         const refillTime = calculateTokensRefillTime(refillRate, refillIn, tokensLeft, requiredTokens);
         const refillTimeInMs = parseTimeToMilliseconds(refillTime);
 
-        console.log(`Not enough:${brand}. refil time ${refillTime}.`);
-        await new Promise(resolve => setTimeout(resolve, refillTimeInMs));
+        // console.log(refillRate);
+        // console.log(refillIn);
+        // console.log(tokensLeft);
+        // console.log(requiredTokens);
+        // console.log("--------------------");
+        // console.log(refillTime);
+        // console.log(refillTimeInMs);
+
+        console.log(`Not Enough Tokens, Brand: ${brand}, Refill Rime: ${refillTime} [${refillTimeInMs}ms], Fallback: ${tokensWaitFallback}ms`);
+        await new Promise(resolve => setTimeout(resolve, (refillTimeInMs + tokensWaitFallback)));
 
         // Recursively check if tokens are now available
         return waitForTokens(brand);
@@ -419,7 +437,7 @@ async function pollingMain(client, interval) {
 
                 const newDeals = processDB.newDeals;
 
-                if (processDB.newDeals.length === 0) {
+                if (newDeals.length === 0) {
                     console.log(`No new deals for ${brand}`);
                     continue;
                 }
@@ -428,13 +446,12 @@ async function pollingMain(client, interval) {
 
                 for (let i = 0; i < newDeals.length; i++) {
                     notify(client, newDeals[i]);
-                    await new Promise(resolve => setTimeout(resolve, 2000)); // 2 seconds
-                    // console.log(newDeals[i]);
+                    await new Promise(resolve => setTimeout(resolve, notifyInterval));
                 }
 
                 if (i < brandsNameData.length - 1) { // Don't wait after the last brand
                     console.log(`Waiting for ${interval}ms`);
-                    await new Promise(resolve => setTimeout(resolve, 100));
+                    await new Promise(resolve => setTimeout(resolve, brandPollingInterval));
                 }
 
                 if (i === brandsNameData.length - 1) {

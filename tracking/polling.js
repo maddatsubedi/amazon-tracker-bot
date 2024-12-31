@@ -6,7 +6,7 @@ const { setup, pollingMain } = require('../utils/keepaDealsApi');
 async function initPolling(client) {
     setIsPolling();
     setup();
-    const result = await pollingMain(client, parseTimeToMilliseconds('10 sec'));
+    const result = await pollingMain(parseTimeToMilliseconds('10 sec'));
     if (result.abort) {
         unsetIsPolling();
     }

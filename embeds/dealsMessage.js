@@ -23,24 +23,23 @@ const getDealMessage = async (deal, roleId) => {
         }
     }
 
-    const maxPriceAccesors = deal.maxPercentageDropDay.priceTypes.map(priceType => priceTypesAccesor[priceType]);
+    const maxPriceAccesors = deal.maxPriceAccesors;
     const maxPriceTypes = deal.maxPercentageDropDay.priceTypes.map(priceType => priceTypesMapKeepa[priceType]);
-    const priceTypesString = maxPriceTypes.join(', ');
-
-    // console.log(maxPriceAccesors);
-    // console.log(maxPriceTypes);
-    // console.log(deal.maxPercentageDropDay);
-    // console.log(deal);
+    const priceTypesString = maxPriceTypes.join(', '); // This will get data from the price types that has the drop percentage day same to maximum drop percentage day
 
     const priceTypesForGraph = {
         amazon: deal.availabePriceTypes.includes(0) ? 1 : 0,
         new: deal.availabePriceTypes.includes(1) ? 1 : 0,
         bb: deal.availabePriceTypes.includes(18) ? 1 : 0,
-    }
+    } // This will get data from the dealOf object of the deal
 
-    const productGraphBuffer = await getProductGraphBuffer({ asin: deal.asin, domain: config.mainDomainId, priceTypes: priceTypesForGraph });
+    const productGraphBuffer = await getProductGraphBuffer({ asin: deal.asin, domain: deal.domains[0], priceTypes: priceTypesForGraph });
     const productGraphAttachment = productGraphBuffer ? new AttachmentBuilder(productGraphBuffer)
         .setName(`productGraph_${deal.asin}.png`) : null;
+
+    const currentPrice = deal[maxPriceAccesors[0]].currentPrice ? formatPrice(deal[maxPriceAccesors[0]].currentPrice, deal.domains[0]) : 'N/A';
+    const previousPriceDay = (deal[maxPriceAccesors[0]].currentPrice && deal[maxPriceAccesors[0]].dropDay) ? formatPrice(deal[maxPriceAccesors[0]].currentPrice + deal[maxPriceAccesors[0]].dropDay, deal.domains[0]) : 'N/A';
+    const percentageDropDay = deal[maxPriceAccesors[0]].percentageDropDay ? `${deal[maxPriceAccesors[0]].percentageDropDay} %` : 'N/A';
 
     const dealEmbed = new EmbedBuilder()
         .setColor('Random')
@@ -51,11 +50,11 @@ const getDealMessage = async (deal, roleId) => {
         .setTitle(`Nouveau Deal  :  ${flagEmojis.join(' ')}`)
         .setDescription(`**[${deal.title}](https://www.amazon.fr/dp/${deal.asin})**`)
         .addFields(
-            { name: 'Prix actuel', value: `> **${deal[maxPriceAccesors[0]].currentPrice ? deal[maxPriceAccesors[0]].currentPrice : 'N/A'}**` },
-            { name: 'Ancien prix', value: `> **${deal[maxPriceAccesors[0]].previousPriceDay ? deal[maxPriceAccesors[0]].previousPriceDay : 'N/A'}**` },
-            { name: 'Réduction :arrow_down:', value: `> **${deal[maxPriceAccesors[0]].percentageDropDay ? `${deal[maxPriceAccesors[0]].percentageDropDay} %` : 'N/A'}**` },
-            { name: 'Prix réduits', value: `> \`${priceTypesString}\`` }
-        )
+            { name: 'Prix actuel', value: `> **${currentPrice}**` },
+            { name: 'Ancien prix', value: `> **${previousPriceDay}**` },
+            { name: 'Réduction :arrow_down:', value: `> **${percentageDropDay}**` },
+            { name: 'Types de prix réduits maximum', value: `> \`${priceTypesString}\`` }
+        );
 
     // console.log(deal.productUrls);
 
@@ -81,6 +80,10 @@ const getDealMessage = async (deal, roleId) => {
 
     if (productGraphAttachment) {
         message.files = [productGraphAttachment];
+    }
+
+    if (deal[maxPriceAccesors[0]].currentPrice > (deal[maxPriceAccesors[0]].currentPrice + deal[maxPriceAccesors[0]].dropDay)) {
+        console.log(deal);
     }
 
     return message;

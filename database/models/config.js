@@ -64,6 +64,18 @@ const setupGlobalTracking = () => {
     setIfNotExists('global_tracking', '1');
 }
 
+const setIsPolling = () => {
+    setConfig('is_polling', '1');
+}
+
+const unsetIsPolling = () => {
+    setConfig('is_polling', '0');
+}
+
+const isPolling = () => {
+    return getConfig('is_polling') === '1';
+}
+
 module.exports = {
     setConfig,
     getConfig,
@@ -73,5 +85,8 @@ module.exports = {
     disableGlobalTracking,
     enableGlobalTracking,
     isGlobalTrackingEnabled,
-    setupGlobalTracking
+    setupGlobalTracking,
+    setIsPolling,
+    unsetIsPolling,
+    isPolling
 };

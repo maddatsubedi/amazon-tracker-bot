@@ -1,56 +1,87 @@
-const notify = require("./tracking/notify")
+const processFinalData = (data) => {
+    const result = {
+        count: {},
+        deals: [],
+        errorCount: {},
+        previousNumberOfDeals: 0,
+        newNumberOfDeals: 0,
+        categories: {},
+        brand: data.brand,
+    };
 
-const data = {
-    asin: 'B09TXWWZ7G',
-    title: 'Polo Ralph Lauren Baskets Keaton Pony pour Homme, Blanc Multi PP, 47 EU',
-    image: 'https://images-na.ssl-images-amazon.com/images/I/71vsYSoVpML.jpg',
-    creationDate: 'Sat, 28 Dec 2024 07:08:00 GMT',
-    categories: [1765043031],
-    rootCat: 11961521031,
-    lastUpdate: 'Sat, 28 Dec 2024 20:00:00 GMT',
-    amazonStat: {
-        currentPrice: 5512,
-        avgDay: 7515,
-        avgWeek: 7756,
-        avgMonth: 7445,
-        percentageDropDay: 42,
-        percentageDropWeek: 29,
-        percentageDropMonth: 26,
-        dropDay: 2003,
-        dropWeek: 2244,
-        dropMonth: 1933
-    },
-    newStat: {
-        currentPrice: 5512,
-        avgDay: 7515,
-        avgWeek: 7756,
-        avgMonth: 7445,
-        percentageDropDay: 27,
-        percentageDropWeek: 29,
-        percentageDropMonth: 26,
-        dropDay: 2003,
-        dropWeek: 2244,
-        dropMonth: 1933
-    },
-    buyBoxStat: {
-        currentPrice: 5512,
-        avgDay: 7515,
-        avgWeek: 7756,
-        avgMonth: 7521,
-        percentageDropDay: 27,
-        percentageDropWeek: 29,
-        percentageDropMonth: 27,
-        dropDay: 2003,
-        dropWeek: 2244,
-        dropMonth: 2009
-    },
-    dealOf: { '4': [0, 1, 18] },
-    brand: 'Ralph Lauren',
-    formattedDealOf: { fr: ['Amazon', 'New', 'Buy Box'] },
-    productUrls: { '4': 'https://www.amazon.fr/dp/B09TXWWZ7G' },
-    domains: ['4'],
-    availabePriceTypes: [0, 1, 18],
-    maxPercentageDropDay: { value: 43, priceTypes: [0, 1, 18] }
-}
+    const processedASINs = new Map();
 
-notify(data);
+    result.previousNumberOfDeals = data.products.reduce((sum, product) =>
+        sum + product.data.products.reduce((domainSum, domainData) =>
+            domainSum + domainData.deals.length, 0
+        ), 0);
+
+    for (const { priceType, priceTypeName, data: priceTypeData, categories } of data.products) {
+        for (const [categoryId, category] of Object.entries(categories)) {
+            if (!result.categories[categoryId]) {
+                result.categories[categoryId] = { ...category };
+            } else {
+                result.categories[categoryId].count += category.count;
+            }
+        }
+
+        result.count[priceType] = {};
+        result.errorCount[priceType] = {};
+
+        for (const { domainId, deals, errors } of priceTypeData.products) {
+            result.count[priceType][domainId] = 0;
+
+            if (!result.errorCount[priceType][domainId]) {
+                result.errorCount[priceType][domainId] = {};
+            }
+
+            for (const [errorName, errorCount] of Object.entries(errors)) {
+                if (!result.errorCount[priceType][domainId][errorName]) {
+                    result.errorCount[priceType][domainId][errorName] = 0;
+                }
+                result.errorCount[priceType][domainId][errorName] += errorCount;
+            }
+
+            for (const deal of deals) {
+                if (!processedASINs.has(deal.asin)) {
+                    processedASINs.set(deal.asin, {});
+                }
+
+                if (!processedASINs.get(deal.asin)[domainId]) {
+                    processedASINs.get(deal.asin)[domainId] = [];
+                }
+
+                if (!processedASINs.get(deal.asin)[domainId].includes(priceType)) {
+                    processedASINs.get(deal.asin)[domainId].push(priceType);
+                }
+
+                if (!processedASINs.get(deal.asin).processed) {
+                    processedASINs.get(deal.asin).processed = true;
+
+                    const dealOf = { ...processedASINs.get(deal.asin) };
+                    delete dealOf.processed;
+
+                    deal.dealOf = dealOf;
+
+                    deal.brand = data.brand;
+
+                    result.deals.push(deal);
+
+                    result.count[priceType][domainId]++;
+                }
+            }
+        }
+    }
+
+    result.newNumberOfDeals = result.deals.length;
+
+    result.success = result.newNumberOfDeals > 0;
+    result.error = result.newNumberOfDeals === 0;
+
+    // console.log(result.deals.slice(0, 5));
+
+    return {
+        result,
+        tokensData: data.tokensData,
+    };
+};

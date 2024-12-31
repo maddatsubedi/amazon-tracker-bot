@@ -119,6 +119,7 @@ const getProductGraphBuffer = async ({ asin, domain = 1, priceTypes }) => {
         }
     }
 
+    // console.log("Domain: ", domain);
     
     const priceTypesUrlParams = priceTypes ? Object.entries(priceTypes).map(([key, value]) => `&${key}=${value}`).join('') : '';
 

@@ -3,49 +3,48 @@ const { simpleEmbed, localesEmbed } = require('../../../embeds/generalEmbeds');
 const { setRange, getChannelAndRole } = require('../../../database/models/discount_range');
 const { validateRange, isValidASIN, getDomainIDByLocale, generateRandomHexColor, validateAvailableLocales } = require('../../../utils/helpers');
 const { domain } = require('../../../utils/keepa.json');
-const { getAllBrands, brandExists, insertBrand, setTrackingForBrand, getAllTrackedBrands } = require('../../../database/models/asins');
+const { getAllBrands, brandExists, insertBrand } = require('../../../database/models/asins');
+const { isGlobalTrackingEnabled, enableGlobalTracking, disableGlobalTracking, isPolling, unsetIsPolling } = require('../../../database/models/config');
 const { initPolling } = require('../../../tracking/polling');
-const { isPolling } = require('../../../database/models/config');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('start-track')
-        .setDescription('Start tracking the brand')
-        .addStringOption(option =>
-            option.setName('brand')
-                .setDescription('Brand name to start tracking')
+        .setName('set-global-tracking')
+        .setDescription('Enable or disable global tracking')
+        .addBooleanOption(option =>
+            option.setName('start-tracking')
+                .setDescription('Enable or disable global tracking')
                 .setRequired(true)),
     isAdmin: true,
     async execute(interaction) {
 
         await interaction.deferReply();
 
-        const brand = interaction.options.getString('brand');
+        const startTracking = interaction.options.getBoolean('start-tracking');
 
-        const isBrandExist = await brandExists(brand);
+        const isTrackingEnabled = isGlobalTrackingEnabled();
 
-        if (!isBrandExist) {
+        if (startTracking === isTrackingEnabled) {
             const errorEmbed = simpleEmbed({
-                description: `**❌ \u200b The brand doesn't exists**\n\n>>> Please use \`add-brand\` to add brand first`, color: 'Red'
+                description: `**Global tracking is already ${startTracking ? 'enabled' : 'disabled'}**\n\n>>> Please use a different option`, color: 'Yellow'
             });
             return await interaction.editReply({ embeds: [errorEmbed] });
         }
 
-        await setTrackingForBrand(brand, true);
-
-        const trackingBrands = getAllTrackedBrands();
-
-        if (trackingBrands.length !== 0) {
+        if (startTracking) {
             if (!isPolling()) {
                 initPolling(interaction.client);
             }
+            enableGlobalTracking();
+        } else {
+            disableGlobalTracking();
+            unsetIsPolling();
         }
 
         const successEmbed = simpleEmbed({
-            description: `**✅ \u200b The brand has been set for tracking**\n\n> **Brand**: \`${brand}\`\n> **Status**: \`Tracking\``,
-            color: 'Green'
+            description: `**✅ \u200b Global tracking is now ${startTracking ? 'enabled' : 'disabled'}**`, color: 'Green'
         });
-
+        
         return await interaction.editReply({ embeds: [successEmbed] });
     },
 };

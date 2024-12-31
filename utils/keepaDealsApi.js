@@ -88,60 +88,56 @@ const fetchProducts = async (brand, priceType) => {
                     };
 
                     const amazonStat = {
-                        currentPrice: deal.current[0] <= 0 ? null : formatPrice(deal.current[0], domainId),
-                        previousPriceDay: (deal.current[0] <= 0 && deal.delta[0][0] <= 0) ? null : formatPrice((deal.current[0] + deal.delta[0][0]), domainId),
-                        avgDay: deal.avg[0][0] <= 0 ? null : formatPrice(deal.avg[0][0], domainId),
-                        avgWeek: deal.avg[1][0] <= 0 ? null : formatPrice(deal.avg[1][0], domainId),
-                        avgMonth: deal.avg[2][0] <= 0 ? null : formatPrice(deal.avg[2][0], domainId),
+                        currentPrice: deal.current[0] <= 0 ? null : deal.current[0],
+                        avgDay: deal.avg[0][0] <= 0 ? null : deal.avg[0][0],
+                        avgWeek: deal.avg[1][0] <= 0 ? null : deal.avg[1][0],
+                        avgMonth: deal.avg[2][0] <= 0 ? null : deal.avg[2][0],
                         percentageDropDay: deal.deltaPercent[0][0] <= 0 ? null : deal.deltaPercent[0][0],
                         percentageDropWeek: deal.deltaPercent[1][0] <= 0 ? null : deal.deltaPercent[1][0],
                         percentageDropMonth: deal.deltaPercent[2][0] <= 0 ? null : deal.deltaPercent[2][0],
-                        dropDay: deal.delta[0][0] <= 0 ? null : formatPrice(deal.delta[0][0], domainId),
-                        dropWeek: deal.delta[1][0] <= 0 ? null : formatPrice(deal.delta[1][0], domainId),
-                        dropMonth: deal.delta[2][0] <= 0 ? null : formatPrice(deal.delta[2][0], domainId),
+                        dropDay: deal.delta[0][0] <= 0 ? null : deal.delta[0][0],
+                        dropWeek: deal.delta[1][0] <= 0 ? null : deal.delta[1][0],
+                        dropMonth: deal.delta[2][0] <= 0 ? null : deal.delta[2][0],
                     };
 
                     const newStat = {
-                        currentPrice: deal.current[1] <= 0 ? null : formatPrice(deal.current[1], domainId),
-                        previousPriceDay: (deal.current[1] <= 0 && deal.delta[0][1] <= 0) ? null : formatPrice((deal.current[1] + deal.delta[0][1]), domainId),
-                        avgDay: deal.avg[0][1] <= 0 ? null : formatPrice(deal.avg[0][1], domainId),
-                        avgWeek: deal.avg[1][1] <= 0 ? null : formatPrice(deal.avg[1][1], domainId),
-                        avgMonth: deal.avg[2][1] <= 0 ? null : formatPrice(deal.avg[2][1], domainId),
+                        currentPrice: deal.current[1] <= 0 ? null : deal.current[1],
+                        avgDay: deal.avg[0][1] <= 0 ? null : deal.avg[0][1],
+                        avgWeek: deal.avg[1][1] <= 0 ? null : deal.avg[1][1],
+                        avgMonth: deal.avg[2][1] <= 0 ? null : deal.avg[2][1],
                         percentageDropDay: deal.deltaPercent[0][1] <= 0 ? null : deal.deltaPercent[0][1],
                         percentageDropWeek: deal.deltaPercent[1][1] <= 0 ? null : deal.deltaPercent[1][1],
                         percentageDropMonth: deal.deltaPercent[2][1] <= 0 ? null : deal.deltaPercent[2][1],
-                        dropDay: deal.delta[0][1] <= 0 ? null : formatPrice(deal.delta[0][1], domainId),
-                        dropWeek: deal.delta[1][1] <= 0 ? null : formatPrice(deal.delta[1][1], domainId),
-                        dropMonth: deal.delta[2][1] <= 0 ? null : formatPrice(deal.delta[2][1], domainId),
+                        dropDay: deal.delta[0][1] <= 0 ? null : deal.delta[0][1],
+                        dropWeek: deal.delta[1][1] <= 0 ? null : deal.delta[1][1],
+                        dropMonth: deal.delta[2][1] <= 0 ? null : deal.delta[2][1],
                     };
 
                     // 🔴 DO NOT REMOVE
                     // const usedStat = {
-                    //     currentPrice: deal.current[2] <= 0 ? null : formatPrice(deal.current[2], domainId),
-                    //     previousPriceDay: (deal.current[2] <= 0 && deal.delta[0][2] <= 0) ? null : formatPrice((deal.current[2] + deal.delta[0][2]), domainId),
-                    //     avgDay: deal.avg[0][2] <= 0 ? null : formatPrice(deal.avg[0][2], domainId),
-                    //     avgWeek: deal.avg[1][2] <= 0 ? null : formatPrice(deal.avg[1][2], domainId),
-                    //     avgMonth: deal.avg[2][2] <= 0 ? null : formatPrice(deal.avg[2][2], domainId),
+                    //     currentPrice: deal.current[2] <= 0 ? null : deal.current[2],
+                    //     avgDay: deal.avg[0][2] <= 0 ? null : deal.avg[0][2],
+                    //     avgWeek: deal.avg[1][2] <= 0 ? null : deal.avg[1][2],
+                    //     avgMonth: deal.avg[2][2] <= 0 ? null : deal.avg[2][2],
                     //     percentageDropDay: deal.deltaPercent[0][2] <= 0 ? null : deal.deltaPercent[0][2],
                     //     percentageDropWeek: deal.deltaPercent[1][2] <= 0 ? null : deal.deltaPercent[1][2],
                     //     percentageDropMonth: deal.deltaPercent[2][2] <= 0 ? null : deal.deltaPercent[2][2],
-                    //     dropDay: deal.delta[0][2] <= 0 ? null : formatPrice(deal.delta[0][2], domainId),
-                    //     dropWeek: deal.delta[1][2] <= 0 ? null : formatPrice(deal.delta[1][2], domainId),
-                    //     dropMonth: deal.delta[2][2] <= 0 ? null : formatPrice(deal.delta[2][2], domainId),
+                    //     dropDay: deal.delta[0][2] <= 0 ? null : deal.delta[0][2],
+                    //     dropWeek: deal.delta[1][2] <= 0 ? null : deal.delta[1][2],
+                    //     dropMonth: deal.delta[2][2] <= 0 ? null : deal.delta[2][2],
                     // };
 
                     const buyBoxStat = {
-                        currentPrice: deal.current[18] <= 0 ? null : formatPrice(deal.current[18], domainId),
-                        previousPriceDay: (deal.current[18] <= 0 && deal.delta[0][18] <= 0) ? null : formatPrice((deal.current[18] - deal.delta[0][18]), domainId),
-                        avgDay: deal.avg[0][18] <= 0 ? null : formatPrice(deal.avg[0][18], domainId),
-                        avgWeek: deal.avg[1][18] <= 0 ? null : formatPrice(deal.avg[1][18], domainId),
-                        avgMonth: deal.avg[2][18] <= 0 ? null : formatPrice(deal.avg[2][18], domainId),
+                        currentPrice: deal.current[18] <= 0 ? null : deal.current[18],
+                        avgDay: deal.avg[0][18] <= 0 ? null : deal.avg[0][18],
+                        avgWeek: deal.avg[1][18] <= 0 ? null : deal.avg[1][18],
+                        avgMonth: deal.avg[2][18] <= 0 ? null : deal.avg[2][18],
                         percentageDropDay: deal.deltaPercent[0][18] <= 0 ? null : deal.deltaPercent[0][18],
                         percentageDropWeek: deal.deltaPercent[1][18] <= 0 ? null : deal.deltaPercent[1][18],
                         percentageDropMonth: deal.deltaPercent[2][18] <= 0 ? null : deal.deltaPercent[2][18],
-                        dropDay: deal.delta[0][18] <= 0 ? null : formatPrice(deal.delta[0][18], domainId),
-                        dropWeek: deal.delta[1][18] <= 0 ? null : formatPrice(deal.delta[1][18], domainId),
-                        dropMonth: deal.delta[2][18] <= 0 ? null : formatPrice(deal.delta[2][18], domainId),
+                        dropDay: deal.delta[0][18] <= 0 ? null : deal.delta[0][18],
+                        dropWeek: deal.delta[1][18] <= 0 ? null : deal.delta[1][18],
+                        dropMonth: deal.delta[2][18] <= 0 ? null : deal.delta[2][18],
                     };
 
                     dealStat.amazonStat = amazonStat;
@@ -232,6 +228,7 @@ const fetchProductsOfAllPricesTypes = async (brand) => {
 }
 
 const processFinalData = (data) => {
+    // console.log(data.products[0].data);
     const result = {
         count: {},
         deals: [],
@@ -311,6 +308,8 @@ const processFinalData = (data) => {
     result.success = result.newNumberOfDeals > 0;
     result.error = result.newNumberOfDeals === 0;
 
+    // console.log(result.deals.slice(0, 5));
+
     return {
         result,
         tokensData: data.tokensData,
@@ -357,7 +356,7 @@ async function pollingMain(client, interval) {
         lastRefillTime = Date.now();
     };
 
-    setInterval(refillTokens, 60000);
+    setInterval(refillTokens, 10000);
     // setInterval(refillTokens, 60000);
 
     const waitForTokens = async (brand) => {
@@ -383,10 +382,21 @@ async function pollingMain(client, interval) {
     const processBrandsSequentially = async () => {
         while (true) {
             if (!isGlobalTrackingEnabled()) {
-                break;
+                console.log('Global tracking is disabled.');
+                return {
+                    abort: 'GLOBAL_TRACKING_DISABLED'
+                }
             }
             let allBrandsData = getAllTrackedBrands();
             let brandsNameData = allBrandsData.map(brand => brand.name);
+
+            if (brandsNameData.length === 0) {
+                console.log('No brands to process.');
+                return {
+                    abort: 'NO_BRANDS'
+                }
+            }
+
             console.log(brandsNameData);
 
             for (let i = 0; i < brandsNameData.length; i++) {
@@ -443,7 +453,7 @@ async function pollingMain(client, interval) {
         }
     };
 
-    await processBrandsSequentially();
+    return await processBrandsSequentially();
 }
 
 module.exports = {

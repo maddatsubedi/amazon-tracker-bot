@@ -1,5 +1,5 @@
 const { getRangeForDiscount } = require("../database/models/discount_range");
-const { getDealMessage } = require("../embeds/dealsEmbeds");
+const { getDealMessage } = require("../embeds/dealsMessage");
 const { processDealData } = require("../utils/apiHelpers");
 const { priceTypesMap: priceTypesMapKeepa, priceTypesAccesor } = require('../utils/keepa.json');
 
@@ -16,9 +16,7 @@ const notify = async (client, deal) => {
             }
         }
 
-        const maxPriceAccesors = processedDeal.maxPercentageDropDay.priceTypes.map(priceType => priceTypesAccesor[priceType]);
-
-        const range = await getRangeForDiscount(processedDeal[maxPriceAccesors[0]].percentageDropDay);
+        const range = await getRangeForDiscount(processedDeal[processedDeal.maxPriceAccesors[0]].percentageDropDay);
 
         if (!range) {
             return {
@@ -49,7 +47,7 @@ const notify = async (client, deal) => {
         }
 
         await channel.send(dealMessage);
-        console.log(`Deal Notified: ${processedDeal.title}`);
+        // console.log(`Deal Notified: ${processedDeal.title}`);
     } catch (error) {
         console.log(error);
     }

@@ -1,5 +1,6 @@
 const { Events } = require('discord.js');
 const { initPolling } = require('../../tracking/polling');
+const { setIsPolling, unsetIsPolling } = require('../../database/models/config');
 
 module.exports = {
 	name: Events.ClientReady,

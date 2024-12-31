@@ -1,4 +1,4 @@
-const { domain } = require('../utils/keepa.json');
+const { domain, config } = require('../utils/keepa.json');
 const { IMAGE_BASE_URL } = require('../utils/amazon.json');
 
 function checkRole(member, roleId) {
@@ -28,7 +28,8 @@ const validateRange = (range) => {
 };
 
 const formatPrice = (price, domainID) => {
-    const currency = domain[domainID]?.currency || '$';
+    const fallBackCurrency = domain[config.mainDomainId].currency;
+    const currency = domain[domainID]?.currency || fallBackCurrency;
     if (price < 0) {
         return 'Out of Stock';
     }
@@ -185,7 +186,7 @@ function validateAvailableLocales(localesArray) {
     return validateLocales(localesArray, domain);
 }
 
-function getRefillTime (tokensLeft, refillIn, refillRate) {
+function getRefillTime(tokensLeft, refillIn, refillRate) {
     const refillTime = new Date();
     refillTime.setSeconds(refillTime.getSeconds() + refillIn + (tokensLeft / refillRate));
     return refillTime;
@@ -193,14 +194,14 @@ function getRefillTime (tokensLeft, refillIn, refillRate) {
 
 function calculateTokensRefillTime(refillRate, refillIn, tokensLeft, tokensRequired) {
     const targetTokens = tokensRequired;
-    
+
     if (tokensLeft >= targetTokens) {
         return "0 sec";
     }
 
     const refillInterval = 60000;
     let timeLeft = 0;
-    
+
     function formatTime(ms) {
         let seconds = Math.floor(ms / 1000);
         let minutes = Math.floor(seconds / 60);
@@ -279,7 +280,7 @@ function getKeepaTimeMinutes(daysAgo) {
 }
 
 const getDealImage = (image) => {
-    return `${IMAGE_BASE_URL}${String.fromCharCode(...image)}`;
+    return image ? `${IMAGE_BASE_URL}${String.fromCharCode(...image)}` : null;
 }
 
 const parseTimeToMilliseconds = (timeStr) => {

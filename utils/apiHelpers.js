@@ -6,6 +6,10 @@ const { getBrandFromName, removeExpiredAsins, insertAsins } = require('../databa
 
 const processDealData = (deal) => {
 
+    // if (!deal.image) {
+    //     console.log('NO_IMAGE', deal);
+    // }
+
     const dealOf = deal.dealOf;
     const dealOfDomains = Object.keys(dealOf);
 
@@ -42,6 +46,8 @@ const processDealData = (deal) => {
         return acc;
     }, { value: 0, priceTypes: [] });
 
+    const maxPriceAccesors = maxPercentageDropDay.priceTypes.map(priceType => priceTypesAccesor[priceType]);
+
     const data = { ...deal };
     data.image = getDealImage(deal.image);
     data.creationDate = formatKeepaDate(deal.creationDate);
@@ -51,6 +57,11 @@ const processDealData = (deal) => {
     data.domains = dealOfDomains;
     data.availabePriceTypes = availabePriceTypes;
     data.maxPercentageDropDay = maxPercentageDropDay;
+    data.maxPriceAccesors = maxPriceAccesors;
+
+    // console.log(deal);
+    // console.log(data);
+    // console.log('-----------------');
 
     return data;
 }

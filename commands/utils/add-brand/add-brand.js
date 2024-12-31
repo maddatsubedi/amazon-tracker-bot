@@ -3,7 +3,9 @@ const { simpleEmbed, localesEmbed } = require('../../../embeds/generalEmbeds');
 const { setRange, getChannelAndRole } = require('../../../database/models/discount_range');
 const { validateRange, isValidASIN, getDomainIDByLocale, generateRandomHexColor, validateAvailableLocales } = require('../../../utils/helpers');
 const { domain } = require('../../../utils/keepa.json');
-const { getAllBrands, brandExists, insertBrand } = require('../../../database/models/asins');
+const { getAllBrands, brandExists, insertBrand, getAllTrackedBrands } = require('../../../database/models/asins');
+const { isPolling } = require('../../../database/models/config');
+const { initPolling } = require('../../../tracking/polling');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -30,7 +32,6 @@ module.exports = {
         const domains = interaction.options.getString('domains').toLowerCase().split(',').map(domain => domain.trim());
         const isAllDomain = domains.includes('all') && domains.length === 1;
         const startTracking = interaction.options.getBoolean('start-tracking');
-        console.log(startTracking);
 
         const isBrandExist = await brandExists(brand);
 
@@ -83,6 +84,14 @@ module.exports = {
         const domainsString = isAllDomain ? 'all' : domains.join(',');
 
         await insertBrand(brand, domainsString, startTracking);
+
+        const trackingBrands = getAllTrackedBrands();
+
+        if (trackingBrands.length !== 0) {
+            if (!isPolling()) {
+                initPolling(interaction.client);
+            }
+        }
 
         const successEmbed = simpleEmbed({
             description: `**✅ \u200b The brand has been added successfully**\n\n> **Brand**: \`${brand}\`\n> **New Domains**: \`${domainsString}\``,

@@ -347,7 +347,7 @@ const hasEnoughTokens = (brand) => {
     return tokensLeft >= requiredTokens;
 };
 
-async function pollingMain(interval) {
+async function pollingMain(client, interval) {
     const MAX_TOKENS = 1200;
 
     let tokenData = await getTokensData();

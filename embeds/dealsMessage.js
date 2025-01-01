@@ -37,8 +37,8 @@ const getDealMessage = async (deal, roleId) => {
     const productGraphAttachment = productGraphBuffer ? new AttachmentBuilder(productGraphBuffer)
         .setName(`productGraph_${deal.asin}.png`) : null;
 
-    const currentPrice = deal[maxPriceAccesors[0]].currentPrice ? formatPrice(deal[maxPriceAccesors[0]].currentPrice, deal.domains[0]) : 'N/A';
-    const previousPriceDay = (deal[maxPriceAccesors[0]].currentPrice && deal[maxPriceAccesors[0]].dropDay) ? formatPrice(deal[maxPriceAccesors[0]].currentPrice + deal[maxPriceAccesors[0]].dropDay, deal.domains[0]) : 'N/A';
+    const currentPrice = deal[maxPriceAccesors[0]].currentPrice ? formatPrice(deal[maxPriceAccesors[0]].currentPrice, deal.domains[0], 'deal') : 'N/A';
+    const previousPriceDay = (deal[maxPriceAccesors[0]].currentPrice && deal[maxPriceAccesors[0]].dropDay) ? formatPrice(deal[maxPriceAccesors[0]].currentPrice + deal[maxPriceAccesors[0]].dropDay, deal.domains[0], 'deal') : 'N/A';
     const percentageDropDay = deal[maxPriceAccesors[0]].percentageDropDay ? `${deal[maxPriceAccesors[0]].percentageDropDay} %` : 'N/A';
 
     const dealEmbed = new EmbedBuilder()

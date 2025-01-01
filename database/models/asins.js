@@ -8,6 +8,7 @@ const createBrandsTable = () => {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT UNIQUE NOT NULL,
             domains TEXT NOT NULL, -- Comma-separated list of domains
+            channel_id TEXT NOT NULL, -- Channel ID to send notifications to
             tracking BOOLEAN DEFAULT 0 -- 0 for not tracking, 1 for tracking (now on brand level)
         )
     `
@@ -40,11 +41,11 @@ const initializeDatabase = () => {
   //     db.prepare('CREATE INDEX IF NOT EXISTS idx_asin ON asins (asin)').run();
 };
 
-const insertBrand = (brandName, domains = "", tracking = 0) => {
+const insertBrand = (brandName, domains = "", tracking = 0, channelID) => {
   const stmt = db.prepare(
-    "INSERT OR IGNORE INTO brands (name, domains, tracking) VALUES (?, ?, ?)"
+    "INSERT OR IGNORE INTO brands (name, domains, channel_id, tracking) VALUES (?, ?, ?, ?)"
   );
-  stmt.run(brandName, domains, tracking ? 1 : 0);
+  stmt.run(brandName, domains, channelID, tracking ? 1 : 0);
   return db
     .prepare("SELECT id, domains, tracking FROM brands WHERE name = ?")
     .get(brandName);

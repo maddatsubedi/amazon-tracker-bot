@@ -27,10 +27,13 @@ const validateRange = (range) => {
     }
 };
 
-const formatPrice = (price, domainID) => {
+const formatPrice = (price, domainID, type) => {
     const fallBackCurrency = domain[config.mainDomainId].currency;
     const currency = domain[domainID]?.currency || fallBackCurrency;
     if (price < 0) {
+        if (type && type === 'deal') {
+            return 'N/A';
+        }
         return 'Out of Stock';
     }
 
@@ -59,7 +62,7 @@ const getLastPriceAndTimestamp = (dataArray, domainID) => {
 
     const formattedTimestamp = formatKeepaDate(lastTimestamp);
 
-    const formattedPrice = formatPrice(lastPrice, domainID);
+    const formattedPrice = formatPrice(lastPrice, domainID, 'product');
 
     return {
         lastPrice: formattedPrice,

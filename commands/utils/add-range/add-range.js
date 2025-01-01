@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionsBitField, ChannelType, PermissionFlagsBits } = require('discord.js');
 const { simpleEmbed } = require('../../../embeds/generalEmbeds');
-const { setRange, getChannelAndRole } = require('../../../database/models/discount_range');
+const { setRange, getRangeDetails } = require('../../../database/models/discount_range');
 const { validateRange } = require('../../../utils/helpers');
 
 module.exports = {
@@ -11,11 +11,6 @@ module.exports = {
             option.setName('range')
                 .setDescription('Discount range to be notified of (e.g. 10-20)')
                 .setRequired(true))
-        .addChannelOption(option =>
-            option.setName('channel')
-                .setDescription('Channel to be notified of this range')
-                .setRequired(true)
-                .addChannelTypes(ChannelType.GuildText))
         .addRoleOption(option =>
             option.setName('role')
                 .setDescription('Role to be notified of this range')
@@ -24,9 +19,7 @@ module.exports = {
     async execute(interaction) {
 
         const range = interaction.options.getString('range');
-        const channel = interaction.options.getChannel('channel');
         const role = interaction.options.getRole('role');
-        const channelID = channel.id;
         const roleID = role.id;
 
         const isValidRange = validateRange(range);
@@ -38,7 +31,7 @@ module.exports = {
             return await interaction.reply({ embeds: [errorEmbed] });
         }
 
-        const existingRange = getChannelAndRole(range);
+        const existingRange = getRangeDetails(range);
 
         if (existingRange) {
             const errorEmbed = simpleEmbed(
@@ -48,20 +41,18 @@ module.exports = {
                 }
             ).addFields(
                 { name: 'Range', value: `\`${range}\``, inline: true },
-                { name: 'Channel', value: `<#${channelID}>`, inline: true },
-                { name: 'Role', value: `<@&${roleID}>`, inline: true },
+                { name: 'Role', value: `<@&${existingRange.roleID}>`, inline: true },
             );
             return await interaction.reply({ embeds: [errorEmbed] });
         }
 
-        setRange(range, channelID, roleID);
+        setRange(range, roleID);
 
 
         // return await interaction.reply({ content: `Range added: ${range}` });
 
         const embed = simpleEmbed({ title: 'New Range Added', color: 'Green', footer: "Config" }).addFields(
             { name: 'Range', value: `\`${range}\``, inline: true },
-            { name: 'Channel', value: `<#${channelID}>`, inline: true },
             { name: 'Role', value: `<@&${roleID}>`, inline: true },
         );
 

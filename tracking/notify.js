@@ -1,3 +1,4 @@
+const { getBrandFromName } = require("../database/models/asins");
 const { getRangeForDiscount } = require("../database/models/discount_range");
 const { getDealMessage } = require("../embeds/dealsMessage");
 const { processDealData } = require("../utils/apiHelpers");
@@ -26,7 +27,17 @@ const notify = async (client, deal) => {
         }
 
         const roleID = range.roleID;
-        const channelID = range.channelID;
+
+        const brandDetails = getBrandFromName(processedDeal.brand);
+
+        if (!brandDetails) {
+            return {
+                error: true,
+                errorType: 'NO_BRAND_CONFIGURED'
+            }
+        }
+
+        const channelID = brandDetails.channel_id;
 
         const channel = await client.channels.fetch(channelID);
 

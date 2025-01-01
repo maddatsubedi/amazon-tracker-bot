@@ -1,4 +1,4 @@
 const db = require('./database/db');
 
-// remove a asin 'adsf' from the database
-// db.prepare("DELETE FROM asins WHERE asin = ?").run('expire');
+// drop table brands
+db.prepare('DROP TABLE IF EXISTS discount_range').run();

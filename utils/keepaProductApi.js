@@ -58,16 +58,16 @@ const getProductDetails = async ({ asin, domain = 1 }) => {
             const lastPriceUpdateDate = formatKeepaDate(lastPriceUpdate);
 
             const amazonPrice = product.csv?.[0];
-            const amazonPriceData = getLastPriceAndTimestamp(amazonPrice, domainId);
+            const amazonPriceData = getLastPriceAndTimestamp(amazonPrice, domainId, 'product');
 
             const newPrice = product.csv?.[1];
-            const newPriceData = getLastPriceAndTimestamp(newPrice, domainId);
+            const newPriceData = getLastPriceAndTimestamp(newPrice, domainId, 'product');
 
             const usedPrice = product.csv?.[2];
-            const usedPriceData = getLastPriceAndTimestamp(usedPrice, domainId);
+            const usedPriceData = getLastPriceAndTimestamp(usedPrice, domainId, 'product');
 
             const buyBoxPrice = product.stats?.buyBoxPrice;
-            const formattedBuyBoxPrice = formatPrice(buyBoxPrice, domainId);
+            const formattedBuyBoxPrice = formatPrice(buyBoxPrice, domainId, 'product');
 
             const images = product.imagesCSV?.split(',');
             const imageUrls = images?.map(image => `${IMAGE_BASE_URL}${image}`);

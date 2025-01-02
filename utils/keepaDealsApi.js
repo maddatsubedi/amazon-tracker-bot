@@ -5,7 +5,7 @@ const { priceTypesMap } = require('./keepa.json');
 const cron = require('node-schedule');
 const { setConfig, getConfig, setupGlobalTracking, isGlobalTrackingEnabled } = require("../database/models/config");
 const notify = require("../tracking/notify");
-const { processDBforDeals, getTokensData } = require("./apiHelpers");
+const { checkDBforNewDeals, getTokensData, insertAsin } = require("./apiHelpers");
 
 const fetchProducts = async (brand, priceType) => {
     const domains = await getBrandDomains(brand);
@@ -330,12 +330,10 @@ const brandTokensRequirements = {
 const defaultTokensRequirements = 85;
 
 const tokensRefillInterval = 5000; // 5 seconds
-
-const tokensWaitFallback = 1250; // 1.25 seconds
-
-const notifyInterval = 2000; // 2 seconds
-
-const brandPollingInterval = 100; // 100ms
+const tokensWaitFallbackInterval = 1250; // 1.25 seconds
+const notifyInterval = 1500; // 1.5 seconds
+const brandPollingInterval = 2500; // 2.5 seconds
+const cycleInterval = 60000; // 1 minute
 
 function setup() {
     initializeDatabase();
@@ -347,7 +345,7 @@ const hasEnoughTokens = (brand) => {
     return tokensLeft >= requiredTokens;
 };
 
-async function pollingMain(client, interval) {
+async function pollingMain(client) {
     const MAX_TOKENS = 1200;
 
     let tokenData = await getTokensData();
@@ -382,16 +380,8 @@ async function pollingMain(client, interval) {
         const refillTime = calculateTokensRefillTime(refillRate, refillIn, tokensLeft, requiredTokens);
         const refillTimeInMs = parseTimeToMilliseconds(refillTime);
 
-        // console.log(refillRate);
-        // console.log(refillIn);
-        // console.log(tokensLeft);
-        // console.log(requiredTokens);
-        // console.log("--------------------");
-        // console.log(refillTime);
-        // console.log(refillTimeInMs);
-
-        console.log(`Not Enough Tokens, Brand: ${brand}, Refill Rime: ${refillTime} [${refillTimeInMs}ms], Fallback: ${tokensWaitFallback}ms`);
-        await new Promise(resolve => setTimeout(resolve, (refillTimeInMs + tokensWaitFallback)));
+        console.log(`Not Enough Tokens, Brand: ${brand}, Refill Rime: ${refillTime} [${refillTimeInMs}ms], Fallback: ${tokensWaitFallbackInterval}ms`);
+        await new Promise(resolve => setTimeout(resolve, (refillTimeInMs + tokensWaitFallbackInterval)));
 
         // Recursively check if tokens are now available
         return waitForTokens(brand);
@@ -428,29 +418,30 @@ async function pollingMain(client, interval) {
                 const data = await fetchAndProcessProducts(brand);
                 console.log(`Processing: ${brand} with ${data.result.deals.length} deals...`);
 
-                const processDB = processDBforDeals(brand, data.result.deals);
+                const checkDB = checkDBforNewDeals(brand, data.result.deals, 'deal');
 
-                if (!processDB) {
+                if (!checkDB) {
                     console.log(`Error processing ${brand}`);
                     continue;
                 }
 
-                const newDeals = processDB.newDeals;
-
-                if (newDeals.length === 0) {
+                if (checkDB.length === 0) {
                     console.log(`No new deals for ${brand}`);
                     continue;
                 }
 
-                console.log(`Notifying ${newDeals.length} new deals for ${brand}...`);
+                console.log(`Notifying and processing ${checkDB.length} new deals for ${brand}...`);
 
-                for (let i = 0; i < newDeals.length; i++) {
-                    notify(client, newDeals[i]);
+                for (let i = 0; i < checkDB.length; i++) {
+                    notify(client, checkDB[i]);
+
+                    const addAsin = insertAsin(brand, checkDB[i], 'deal');
+
                     await new Promise(resolve => setTimeout(resolve, notifyInterval));
                 }
 
-                if (i < brandsNameData.length - 1) { // Don't wait after the last brand
-                    console.log(`Waiting for ${interval}ms`);
+                if (i < brandsNameData.length - 1) { // Don't wait after the last brand because we're going to wait for the next cycle
+                    console.log(`Waiting for ${brandPollingInterval}ms`);
                     await new Promise(resolve => setTimeout(resolve, brandPollingInterval));
                 }
 
@@ -462,7 +453,7 @@ async function pollingMain(client, interval) {
             }
 
             console.log('All brands processed.');
-            await new Promise(resolve => setTimeout(resolve, interval));
+            await new Promise(resolve => setTimeout(resolve, cycleInterval));
 
             setImmediate(() => {
                 console.log('Starting the next round of brand processing...');

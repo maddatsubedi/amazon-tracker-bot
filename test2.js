@@ -1,3 +1,6 @@
 const { setTrackingForBrand } = require("./database/models/asins");
+const { parseTimeToMilliseconds } = require("./utils/helpers");
 
-setTrackingForBrand('vans shoes', false);
+// setTrackingForBrand('Ralph Lauren', false);
+
+console.log(parseTimeToMilliseconds('1 min'));

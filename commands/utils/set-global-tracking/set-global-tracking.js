@@ -4,7 +4,7 @@ const { validateRange, isValidASIN, getDomainIDByLocale, generateRandomHexColor,
 const { domain } = require('../../../utils/keepa.json');
 const { getAllBrands, brandExists, insertBrand } = require('../../../database/models/asins');
 const { isGlobalTrackingEnabled, enableGlobalTracking, disableGlobalTracking, isPolling, unsetIsPolling } = require('../../../database/models/config');
-const { initPolling } = require('../../../tracking/polling');
+const { initPolling, reInitPolling } = require('../../../tracking/polling');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -31,13 +31,10 @@ module.exports = {
         }
 
         if (startTracking) {
-            if (!isPolling()) {
-                initPolling(interaction.client);
-            }
             enableGlobalTracking();
+            reInitPolling(interaction.client);
         } else {
             disableGlobalTracking();
-            unsetIsPolling();
         }
 
         const successEmbed = simpleEmbed({

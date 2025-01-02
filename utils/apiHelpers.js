@@ -2,7 +2,7 @@ const { IMAGE_BASE_URL } = require('./amazon.json');
 const { priceTypesMap: priceTypesMapKeepa, priceTypesAccesor } = require('./keepa.json')
 const { getDealImage, formatKeepaDate, getDomainLocaleByDomainID } = require('./helpers');
 const { keepaAPIKey } = require('../config.json');
-const { getBrandFromName, removeExpiredAsins, insertAsins } = require('../database/models/asins');
+const { getBrandFromName, removeExpiredAsins, insertAsins, getAsinsForBrand, insertSingleAsin } = require('../database/models/asins');
 
 const processDealData = (deal) => {
 
@@ -91,13 +91,38 @@ const getTokensData = async () => {
 
 // getTokensData().then(console.log);
 
-const processDBforDeals = (brand, deals) => {
+const checkDBforNewDeals = (brand, deals, type) => {
+    const brandData = getBrandFromName(brand);
+
+    const removeAsins = removeExpiredAsins(type);
+
+    const dbAsins = getAsinsForBrand(brandData.name, type);
+    const dbAsinsArray = dbAsins.map(asin => asin.asin);
+
+    const newDeals = deals.filter(deal => !dbAsinsArray.includes(deal.asin));
+
+    return newDeals;
+}
+
+const insertAsin = (brand, deal, type) => {
+    const brandData = getBrandFromName(brand);
+    const dealsExpiresAt = new Date(new Date().setDate(new Date().getDate() + 2)).toUTCString();
+    const addedAt = new Date().toUTCString();
+    const dealCreatedAt = formatKeepaDate(deal.creationDate);
+
+    const addAsins = insertSingleAsin(deal.asin, brandData.id, addedAt, dealsExpiresAt, dealCreatedAt, type);
+
+    return addAsins;
+}
+
+const processDBForDeals = (brand, deals, type) => {
     const brandData = getBrandFromName(brand);
     const dealsExpiresAt = new Date(new Date().setDate(new Date().getDate() + 2)).toUTCString();
 
-    const removeAsins = removeExpiredAsins();
-    const expiredAsins = removeAsins.map(asin => asin.asin); 
-    const addAsins = insertAsins(brandData?.id, deals, dealsExpiresAt, 'deal');
+    const removeAsins = removeExpiredAsins(type);
+    const expiredAsins = removeAsins.map(asin => asin.asin);
+
+    const addAsins = insertAsins(brandData.id, deals, dealsExpiresAt, 'deal');
 
     const newDeals = deals.filter(deal => addAsins.successfulAsins.includes(deal.asin));
 
@@ -116,5 +141,7 @@ const processDBforDeals = (brand, deals) => {
 module.exports = {
     processDealData,
     getTokensData,
-    processDBforDeals,
- };
+    checkDBforNewDeals,
+    insertAsin,
+    processDBForDeals,
+};

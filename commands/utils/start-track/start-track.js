@@ -3,7 +3,7 @@ const { simpleEmbed, localesEmbed } = require('../../../embeds/generalEmbeds');
 const { validateRange, isValidASIN, getDomainIDByLocale, generateRandomHexColor, validateAvailableLocales } = require('../../../utils/helpers');
 const { domain } = require('../../../utils/keepa.json');
 const { getAllBrands, brandExists, insertBrand, setTrackingForBrand, getAllTrackedBrands } = require('../../../database/models/asins');
-const { initPolling } = require('../../../tracking/polling');
+const { initPolling, reInitPolling } = require('../../../tracking/polling');
 const { isPolling } = require('../../../database/models/config');
 
 module.exports = {
@@ -35,9 +35,7 @@ module.exports = {
         const trackingBrands = getAllTrackedBrands();
 
         if (trackingBrands.length !== 0) {
-            if (!isPolling()) {
-                initPolling(interaction.client);
-            }
+            reInitPolling(interaction.client);
         }
 
         const successEmbed = simpleEmbed({

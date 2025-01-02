@@ -455,9 +455,7 @@ async function pollingMain(client) {
             console.log('All brands processed.');
             await new Promise(resolve => setTimeout(resolve, cycleInterval));
 
-            setImmediate(() => {
-                console.log('Starting the next round of brand processing...');
-            });
+            console.log('Starting the next round of brand processing...');
         }
     };
 

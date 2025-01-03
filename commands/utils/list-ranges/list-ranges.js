@@ -44,8 +44,8 @@ module.exports = {
             const paginatedRanges = ranges.slice(start, end);
 
             let descriptionContent = '';
-            paginatedRanges.forEach(({ range, channelID, roleID }) => {
-                descriptionContent += `\n> **Range**: \`${range}\`\n> **Channel**: <#${channelID}>\n> **Role**: <@&${roleID}>\n`;
+            paginatedRanges.forEach(({ range, roleID }) => {
+                descriptionContent += `\n> **Range**: \`${range}\`\n> **Role**: <@&${roleID}>\n`;
             });
 
             const embed = new EmbedBuilder()

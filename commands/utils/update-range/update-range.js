@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, ChannelType } = require('discord.js');
 const { simpleEmbed } = require('../../../embeds/generalEmbeds');
-const { updateRange, getChannelAndRole } = require('../../../database/models/discount_range');
+const { updateRange, getRangeDetails } = require('../../../database/models/discount_range');
 const { validateRange } = require('../../../utils/helpers');
 
 module.exports = {
@@ -11,17 +11,13 @@ module.exports = {
             option.setName('range')
                 .setDescription('Discount range to update (e.g. 10-20)')
                 .setRequired(true))
-        .addChannelOption(option =>
-            option.setName('channel')
-                .setDescription('New channel to be notified of this range')
-                .addChannelTypes(ChannelType.GuildText))
         .addRoleOption(option =>
             option.setName('role')
-                .setDescription('New role to be notified of this range')),
+                .setDescription('New role to be notified of this range')
+                .setRequired(true)),
     isAdmin: true,
     async execute(interaction) {
         const range = interaction.options.getString('range');
-        const channel = interaction.options.getChannel('channel');
         const role = interaction.options.getRole('role');
 
         const isValidRange = validateRange(range);
@@ -33,7 +29,7 @@ module.exports = {
             return await interaction.reply({ embeds: [errorEmbed] });
         }
 
-        const existingRange = getChannelAndRole(range);
+        const existingRange = getRangeDetails(range);
 
         if (!existingRange) {
             const errorEmbed = simpleEmbed({
@@ -43,16 +39,15 @@ module.exports = {
             return await interaction.reply({ embeds: [errorEmbed] });
         }
 
-        const { channelID: oldChannelID, roleID: oldRoleID } = existingRange;
+        const { roleID: oldRoleID } = existingRange;
 
-        const newChannelID = channel ? channel.id : oldChannelID;
-        const newRoleID = role ? role.id : oldRoleID;
+        const newRoleID = role.id;
 
-        updateRange(range, newChannelID, newRoleID);
+        updateRange(range, newRoleID);
 
         const successEmbed = simpleEmbed({
             title: `Range \`${range}\` Updated`, color: 'Green', footer: 'Config',
-            description: `**Old Configurations**\n> \`Channel\`: <#${oldChannelID}>\n> \`Role\`: <@&${oldRoleID}>\n\n**New Configurations**\n> \`Channel\`: <#${newChannelID}>\n> \`Role\`: <@&${newRoleID}>`,
+            description: `**Old Configurations**\n> \`Role\`: <@&${oldRoleID}>\n\n**New Configurations**\n> \`Role\`: <@&${newRoleID}>`,
         });
 
         return await interaction.reply({ embeds: [successEmbed] });

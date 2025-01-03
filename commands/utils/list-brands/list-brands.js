@@ -43,8 +43,8 @@ module.exports = {
             const paginatedBrands = brands.slice(start, end);
 
             let descriptionContent = '';
-            paginatedBrands.forEach(({ name, domains, tracking }) => {
-                descriptionContent += `\n> **Brand**: \`${name}\`\n> **Domains**: \`${domains}\`\n> **Tracking**: \`${tracking ? 'Yes' : 'No'}\`\n`;
+            paginatedBrands.forEach(({ name, domains, channel_id, tracking }) => {
+                descriptionContent += `\n> **Brand**: \`${name}\`\n> **Domains**: \`${domains}\`\n> **Channel**: <#${channel_id}>\n> **Tracking**: \`${tracking ? 'Yes' : 'No'}\`\n`;
             });
 
             const embed = new EmbedBuilder()

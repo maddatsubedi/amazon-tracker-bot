@@ -5,7 +5,7 @@ const db = require('../../../database/db');
 const { getProductDetails, addProducts } = require('../../../utils/keepaProductApi');
 const { getProductsFromStore } = require('../../../utils/rainforestApis');
 const { insertBrand } = require('../../../database/models/asins');
-const { getDealMessage } = require('../../../embeds/dealsEmbeds');
+const { getDealMessage } = require('../../../embeds/dealsMessage');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -14,6 +14,7 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply();
 
+        // await interaction.channel.send('');
         return await interaction.editReply('Pong!');
     },
 };

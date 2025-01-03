@@ -8,6 +8,7 @@ const createBrandsTable = () => {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT UNIQUE NOT NULL,
             domains TEXT NOT NULL, -- Comma-separated list of domains
+            channel_id TEXT NOT NULL, -- Channel ID to send notifications to
             tracking BOOLEAN DEFAULT 0 -- 0 for not tracking, 1 for tracking (now on brand level)
         )
     `
@@ -40,11 +41,11 @@ const initializeDatabase = () => {
   //     db.prepare('CREATE INDEX IF NOT EXISTS idx_asin ON asins (asin)').run();
 };
 
-const insertBrand = (brandName, domains = "", tracking = 0) => {
+const insertBrand = (brandName, domains = "", tracking = 0, channelID) => {
   const stmt = db.prepare(
-    "INSERT OR IGNORE INTO brands (name, domains, tracking) VALUES (?, ?, ?)"
+    "INSERT OR IGNORE INTO brands (name, domains, channel_id, tracking) VALUES (?, ?, ?, ?)"
   );
-  stmt.run(brandName, domains, tracking ? 1 : 0);
+  stmt.run(brandName, domains, channelID, tracking ? 1 : 0);
   return db
     .prepare("SELECT id, domains, tracking FROM brands WHERE name = ?")
     .get(brandName);
@@ -118,12 +119,42 @@ const insertAsins = (brand_id, deals, expiresAt, type = "normal") => {
   };
 };
 
-const removeExpiredAsins = () => {
+const insertSingleAsin = (asin, brandId, addedAt, expiresAt, createdAt, type = "normal") => {
+  const stmt = db.prepare(`
+        INSERT OR IGNORE INTO asins (asin, brand_id, added_at, expires_at, deal_created_at, type)
+        VALUES (?, ?, ?, ?, ?, ?)
+    `);
+
+  try {
+    const result = stmt.run(
+      asin,
+      brandId,
+      addedAt,
+      expiresAt,
+      createdAt,
+      type
+    );
+    if (result.changes === 0) {
+      return 'DUPLICATE';
+    } else {
+      return 'SUCCESS';
+    }
+  } catch (error) {
+    console.error("Error inserting ASIN:", deal.asin, error);
+    return 'ERROR';
+  }
+}
+
+const removeExpiredAsins = (type = null) => {
   const currentDate = new Date();
 
-  const expiredAsins = db.prepare(
-    "SELECT asin, expires_at FROM asins WHERE expires_at IS NOT NULL"
-  ).all();
+  // Query for expired ASINs with optional type filtering
+  const expiredAsinsQuery = `
+    SELECT asin, expires_at FROM asins
+    WHERE expires_at IS NOT NULL ${type ? "AND type = ?" : ""}
+  `;
+
+  const expiredAsins = db.prepare(expiredAsinsQuery).all(type ? [type] : []);
 
   const expiredAsinsToDelete = expiredAsins.filter((asinData) => {
     const expiresAtDate = new Date(asinData.expires_at);
@@ -132,9 +163,8 @@ const removeExpiredAsins = () => {
 
   if (expiredAsinsToDelete.length > 0) {
     const expiredAsinsList = expiredAsinsToDelete.map((asinData) => asinData.asin);
-    
     db.prepare(
-      "DELETE FROM asins WHERE asin IN (" + expiredAsinsList.map(() => "?").join(",") + ")"
+      `DELETE FROM asins WHERE asin IN (${expiredAsinsList.map(() => "?").join(",")})`
     ).run(...expiredAsinsList);
   }
 
@@ -165,16 +195,15 @@ const setTrackingForBrand = (brandName, tracking) => {
   }
 };
 
-const getAsinsForBrand = (brandName) => {
+const getAsinsForBrand = (brandName, type = null) => {
   const brand = db
     .prepare("SELECT id FROM brands WHERE name = ?")
     .get(brandName);
   if (brand) {
-    return db
-      .prepare(
-        "SELECT asin, added_at, expires_at, deal_created_at, type FROM asins WHERE brand_id = ?"
-      )
-      .all(brand.id);
+    const asinsQuery = `
+      SELECT * FROM asins WHERE brand_id = ? ${type ? "AND type = ?" : ""}
+    `;
+    return db.prepare(asinsQuery).all(type ? [brand.id, type] : [brand.id]);
   }
   return [];
 };
@@ -216,6 +245,13 @@ const getBrandFromName = (brandName) => {
   return db.prepare("SELECT * FROM brands WHERE name = ?").get(brandName);
 }
 
+const getAllAsins = (type = null) => {
+  const asinsQuery = `
+    SELECT * FROM asins ${type ? "WHERE type = ?" : ""}
+  `;
+  return db.prepare(asinsQuery).all(type ? [type] : []);
+}
+
 module.exports = {
   createBrandsTable,
   createAsinsTable,
@@ -233,4 +269,6 @@ module.exports = {
   initializeDatabase,
   getAllTrackedBrands,
   getBrandFromName,
+  insertSingleAsin,
+  getAllAsins,
 };

@@ -4,6 +4,7 @@ const path = require('node:path');
 const { checkRole } = require('../../utils/helpers');
 const { getConfig } = require('../../database/models/config');
 const { simpleEmbed } = require('../../embeds/generalEmbeds');
+const { validateAdminAndGuild } = require('../../utils/discordValidators');
 
 module.exports = {
 	name: Events.InteractionCreate,
@@ -20,11 +21,13 @@ module.exports = {
 			return;
 		}
 
-		const adminRoleID = getConfig('adminRoleID');
-		const errorEmbed = simpleEmbed({description: '❌ \u200b You do not have permission to run this command', color: 'Red' });
-
-		if (command.isAdmin && !checkRole(interaction.member, adminRoleID)) {
-			return await interaction.reply({embeds: [errorEmbed]});
+		// Validate guild and admin commands
+		const validate = await validateAdminAndGuild(interaction);
+		if (validate && validate.error) {
+			if (validate.embed) {
+				return await interaction.reply({embeds: [validate.embed]});
+			}
+			return;
 		}
 
 		try {

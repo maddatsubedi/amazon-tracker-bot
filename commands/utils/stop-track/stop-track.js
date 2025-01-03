@@ -1,6 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder, PermissionsBitField, ChannelType, PermissionFlagsBits } = require('discord.js');
 const { simpleEmbed, localesEmbed } = require('../../../embeds/generalEmbeds');
-const { setRange, getChannelAndRole } = require('../../../database/models/discount_range');
 const { validateRange, isValidASIN, getDomainIDByLocale, generateRandomHexColor, validateAvailableLocales } = require('../../../utils/helpers');
 const { domain } = require('../../../utils/keepa.json');
 const { getAllBrands, brandExists, insertBrand, setTrackingForBrand } = require('../../../database/models/asins');

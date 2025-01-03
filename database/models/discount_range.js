@@ -4,29 +4,28 @@ const createPriceRangeTable = () => {
     db.prepare(`
         CREATE TABLE IF NOT EXISTS discount_range (
             range TEXT PRIMARY KEY,
-            channelID TEXT NOT NULL,
             roleID TEXT NOT NULL
         )
     `).run();
 };
 
-const setRange = (range, channelID, roleID) => {
+const setRange = (range, roleID) => {
     createPriceRangeTable();
     db.prepare(`
-        INSERT INTO discount_range (range, channelID, roleID) VALUES (?, ?, ?)
-    `).run(range, channelID, roleID);
+        INSERT INTO discount_range (range, roleID) VALUES (?, ?)
+    `).run(range, roleID);
 };
 
-const updateRange = (range, channelID, roleID) => {
+const updateRange = (range, roleID) => {
     createPriceRangeTable();
     db.prepare(`
-        UPDATE discount_range SET channelID = ?, roleID = ? WHERE range = ?
-    `).run(channelID, roleID, range);
+        UPDATE discount_range SET roleID = ? WHERE range = ?
+    `).run(roleID, range);
 };
 
-const getChannelAndRole = (range) => {
+const getRangeDetails = (range) => {
     createPriceRangeTable();
-    const row = db.prepare('SELECT channelID, roleID FROM discount_range WHERE range = ?').get(range);
+    const row = db.prepare('SELECT roleID FROM discount_range WHERE range = ?').get(range);
     return row || null;
 };
 
@@ -66,7 +65,7 @@ const getRangeForDiscount = (discount) => {
 module.exports = {
     setRange,
     updateRange,
-    getChannelAndRole,
+    getRangeDetails,
     getAllRanges,
     deleteRange,
     resetRanges,

@@ -1,31 +1,67 @@
+const { getBrandFromName } = require("../database/models/asins");
 const { getRangeForDiscount } = require("../database/models/discount_range");
-const { getDealMessage } = require("../embeds/dealsEmbeds");
+const { getDealMessage } = require("../embeds/dealsMessage");
 const { processDealData } = require("../utils/apiHelpers");
 const { priceTypesMap: priceTypesMapKeepa, priceTypesAccesor } = require('../utils/keepa.json');
 
 const notify = async (client, deal) => {
 
-    const processedDeal = processDealData(deal);
+    try {
 
-    const maxPriceAccesors = processedDeal.maxPercentageDropDay.priceTypes.map(priceType => priceTypesAccesor[priceType]);
+        const processedDeal = processDealData(deal);
 
-    const range = await getRangeForDiscount(processedDeal[maxPriceAccesors[0]].percentageDropDay);
-
-    if (!range) {
-        return {
-            error: true,
-            errorType: 'NO_RANGE_CONFIGURED'
+        if (!processedDeal) {
+            return {
+                error: true,
+                errorType: 'ERROR_PROCESSING_DEAL'
+            }
         }
+
+        const range = await getRangeForDiscount(processedDeal[processedDeal.maxPriceAccesors[0]].percentageDropDay);
+
+        if (!range) {
+            return {
+                error: true,
+                errorType: 'NO_RANGE_CONFIGURED'
+            }
+        }
+
+        const roleID = range.roleID;
+
+        const brandDetails = getBrandFromName(processedDeal.brand);
+
+        if (!brandDetails) {
+            return {
+                error: true,
+                errorType: 'NO_BRAND_CONFIGURED'
+            }
+        }
+
+        const channelID = brandDetails.channel_id;
+
+        const channel = await client.channels.fetch(channelID);
+
+        if (!channel) {
+            return {
+                error: true,
+                errorType: 'NO_CHANNEL_CONFIGURED'
+            }
+        }
+
+        const dealMessage = await getDealMessage(processedDeal, roleID);
+
+        if (!dealMessage) {
+            return {
+                error: true,
+                errorType: 'ERROR_CREATING_DEAL_MESSAGE'
+            }
+        }
+
+        await channel.send(dealMessage);
+        // console.log(`Deal Notified: ${processedDeal.title}`);
+    } catch (error) {
+        console.log(error);
     }
-
-    const roleID = range.roleID;
-    const channelID = range.channelID;
-
-    const channel = await client.channels.fetch(channelID);
-
-    const dealEmbed = getDealMessage(processedDeal, roleID);
-
-    await channel.send({ embeds: [dealEmbed] });
 
 }
 

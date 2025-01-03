@@ -433,11 +433,12 @@ async function pollingMain(client) {
                 console.log(`Notifying and processing ${checkDB.length} new deals for ${brand}...`);
 
                 for (let i = 0; i < checkDB.length; i++) {
-                    notify(client, checkDB[i]);
+                    await notify(client, checkDB[i]);
 
                     const addAsin = insertAsin(brand, checkDB[i], 'deal');
 
                     if (addAsin !== 'SUCCESS') {
+                        console.log(brand);
                         console.log(addAsin);
                         console.log(checkDB[i]);
                     }
@@ -450,11 +451,11 @@ async function pollingMain(client) {
                     await new Promise(resolve => setTimeout(resolve, brandPollingInterval));
                 }
 
-                if (i === brandsNameData.length - 1) {
-                    setImmediate(() => {
-                        console.log('Next round starting soon...');
-                    });
-                }
+                // if (i === brandsNameData.length - 1) {
+                //     setImmediate(() => {
+                //         console.log('Next round starting soon...');
+                //     });
+                // }
             }
 
             console.log('All brands processed.');

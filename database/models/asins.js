@@ -135,13 +135,13 @@ const insertSingleAsin = (asin, brandId, addedAt, expiresAt, createdAt, type = "
       type
     );
     if (result.changes === 0) {
-      return null;
+      return 'DUPLICATE';
     } else {
       return 'SUCCESS';
     }
   } catch (error) {
     console.error("Error inserting ASIN:", deal.asin, error);
-    return null;
+    return 'ERROR';
   }
 }
 

@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder, PermissionsBitField, ChannelType, PermissionFlagsBits } = require('discord.js');
 const { simpleEmbed, localesEmbed } = require('../../../embeds/generalEmbeds');
-const { validateRange, isValidASIN, getDomainIDByLocale, generateRandomHexColor, validateAvailableLocales } = require('../../../utils/helpers');
+const { validateRange, isValidASIN, getDomainIDByLocale, generateRandomHexColor, validateAvailableLocales, validateLowerCase } = require('../../../utils/helpers');
 const { domain } = require('../../../utils/keepa.json');
 const { getAllBrands, brandExists, insertBrand, getAllTrackedBrands } = require('../../../database/models/asins');
 const { isPolling } = require('../../../database/models/config');
@@ -37,8 +37,18 @@ module.exports = {
         const isAllDomain = domains.includes('all') && domains.length === 1;
         const startTracking = interaction.options.getBoolean('start-tracking');
         const channel = interaction.options.getChannel('channel');
+        const trimmedBrand = brand.trim();
 
-        const isBrandExist = await brandExists(brand);
+        if (!validateLowerCase(trimmedBrand)) {
+            const errorEmbed = simpleEmbed({
+                description: `**❌ \u200b The brand name is not valid**\n\n>>> Brand names should be in lowercase letters`, color: 'Red'
+            });
+            return await interaction.editReply({ embeds: [errorEmbed] });
+        }
+
+        const formattedBrand = trimmedBrand.toLowerCase();
+
+        const isBrandExist = await brandExists(formattedBrand);
 
         if (isBrandExist) {
             const errorEmbed = simpleEmbed({
@@ -84,11 +94,9 @@ module.exports = {
             }
         }
 
-        // console.log(brand.length);
-        // console.log(domains);
         const domainsString = isAllDomain ? 'all' : domains.join(',');
 
-        await insertBrand(brand, domainsString, startTracking, channel.id);
+        await insertBrand(formattedBrand, domainsString, startTracking, channel.id);
 
         const trackingBrands = getAllTrackedBrands();
 
@@ -97,7 +105,7 @@ module.exports = {
         }
 
         const successEmbed = simpleEmbed({
-            description: `**✅ \u200b The brand has been added successfully**\n\n> **Brand**: \`${brand}\`\n> **New Domains**: \`${domainsString}\``,
+            description: `**✅ \u200b The brand has been added successfully**\n\n> **Brand**: \`${formattedBrand}\`\n> **New Domains**: \`${domainsString}\`\n> **Tracking**: \`${startTracking ? 'Yes' : 'No'}\``,
             color: 'Green'
         });
 

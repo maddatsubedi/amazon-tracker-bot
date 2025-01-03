@@ -323,11 +323,11 @@ const fetchAndProcessProducts = async (brand) => {
 }
 
 const brandTokensRequirements = {
-    'adidas': 70,
-    'nike': 80
+    'adidas': 80,
+    'nike': 70
 };
 
-const defaultTokensRequirements = 85;
+const defaultTokensRequirements = 80;
 
 // const tokensRefillInterval = 5000; // 5 seconds
 const tokensWaitFallbackInterval = 2500; // 2.5 seconds
@@ -437,11 +437,11 @@ async function pollingMain(client) {
 
                     const addAsin = insertAsin(brand, checkDB[i], 'deal');
 
-                    if (addAsin !== 'SUCCESS') {
-                        console.log(brand);
-                        console.log(addAsin);
-                        console.log(checkDB[i]);
-                    }
+                    // if (addAsin !== 'SUCCESS') {
+                    //     console.log(brand);
+                    //     console.log(addAsin);
+                    //     console.log(checkDB[i]);
+                    // }
 
                     await new Promise(resolve => setTimeout(resolve, notifyInterval));
                 }

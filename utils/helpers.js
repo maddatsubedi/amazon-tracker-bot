@@ -303,6 +303,13 @@ const parseTimeToMilliseconds = (timeStr) => {
     return totalMilliseconds;
 };
 
+const validateLowerCase = (string) => {
+    if (!string) {
+        return false;
+    }
+    return string === string.toLowerCase();
+}
+
 module.exports = {
     checkRole,
     checkRolesFromList,
@@ -326,5 +333,6 @@ module.exports = {
     getKeepaTimeMinutes,
     getDomainIDs,
     getDealImage,
-    parseTimeToMilliseconds
+    parseTimeToMilliseconds,
+    validateLowerCase,
 };

@@ -52,8 +52,8 @@ const data = {
     brand: 'adidas'
 }
 
-const checkDB = checkDBforNewDeals([data], 'deal');
-console.log(checkDB);
+// const checkDB = checkDBforNewDeals([data], 'deal');
+// console.log(checkDB);
 
-// const addAsin = insertAsin('nike', data, 'deal');
-// console.log(addAsin);
+const addAsin = insertAsin('nike', data, 'deal');
+console.log(addAsin);

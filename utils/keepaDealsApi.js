@@ -418,7 +418,7 @@ async function pollingMain(client) {
                 const data = await fetchAndProcessProducts(brand);
                 console.log(`Processing: ${brand} with ${data.result.deals.length} deals...`);
 
-                const checkDB = checkDBforNewDeals(brand, data.result.deals, 'deal');
+                const checkDB = checkDBforNewDeals(data.result.deals, 'deal');
 
                 if (!checkDB) {
                     console.log(`Error processing ${brand}`);

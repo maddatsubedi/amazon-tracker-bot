@@ -1,4 +1,4 @@
-const { insertAsin } = require("./utils/apiHelpers");
+const { insertAsin, checkDBforNewDeals } = require("./utils/apiHelpers");
 
 const data = {
     asin: 'B00QZ8K0N8',
@@ -49,8 +49,11 @@ const data = {
         dropMonth: 29
     },
     dealOf: { '9': [1] },
-    brand: 'nike'
+    brand: 'adidas'
 }
 
-const addAsin = insertAsin('nike', data, 'deal');
-console.log(addAsin);
+const checkDB = checkDBforNewDeals([data], 'deal');
+console.log(checkDB);
+
+// const addAsin = insertAsin('nike', data, 'deal');
+// console.log(addAsin);

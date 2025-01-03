@@ -2,7 +2,7 @@ const { IMAGE_BASE_URL } = require('./amazon.json');
 const { priceTypesMap: priceTypesMapKeepa, priceTypesAccesor } = require('./keepa.json')
 const { getDealImage, formatKeepaDate, getDomainLocaleByDomainID } = require('./helpers');
 const { keepaAPIKey } = require('../config.json');
-const { getBrandFromName, removeExpiredAsins, insertAsins, getAsinsForBrand, insertSingleAsin } = require('../database/models/asins');
+const { getBrandFromName, removeExpiredAsins, insertAsins, getAsinsForBrand, insertSingleAsin, getAllAsins } = require('../database/models/asins');
 
 const processDealData = (deal) => {
 
@@ -91,12 +91,10 @@ const getTokensData = async () => {
 
 // getTokensData().then(console.log);
 
-const checkDBforNewDeals = (brand, deals, type) => {
-    const brandData = getBrandFromName(brand);
-
+const checkDBforNewDeals = (deals, type) => {
     const removeAsins = removeExpiredAsins(type);
 
-    const dbAsins = getAsinsForBrand(brandData.name, type);
+    const dbAsins = getAllAsins(type);
     const dbAsinsArray = dbAsins.map(asin => asin.asin);
 
     const newDeals = deals.filter(deal => !dbAsinsArray.includes(deal.asin));

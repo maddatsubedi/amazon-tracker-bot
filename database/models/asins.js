@@ -245,6 +245,13 @@ const getBrandFromName = (brandName) => {
   return db.prepare("SELECT * FROM brands WHERE name = ?").get(brandName);
 }
 
+const getAllAsins = (type = null) => {
+  const asinsQuery = `
+    SELECT * FROM asins ${type ? "WHERE type = ?" : ""}
+  `;
+  return db.prepare(asinsQuery).all(type ? [type] : []);
+}
+
 module.exports = {
   createBrandsTable,
   createAsinsTable,
@@ -263,4 +270,5 @@ module.exports = {
   getAllTrackedBrands,
   getBrandFromName,
   insertSingleAsin,
+  getAllAsins,
 };

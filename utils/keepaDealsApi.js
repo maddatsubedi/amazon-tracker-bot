@@ -329,8 +329,8 @@ const brandTokensRequirements = {
 
 const defaultTokensRequirements = 85;
 
-const tokensRefillInterval = 5000; // 5 seconds
-const tokensWaitFallbackInterval = 1250; // 1.25 seconds
+// const tokensRefillInterval = 5000; // 5 seconds
+const tokensWaitFallbackInterval = 2500; // 2.5 seconds
 const notifyInterval = 1500; // 1.5 seconds
 const brandPollingInterval = 2500; // 2.5 seconds
 const cycleInterval = 60000; // 1 minute
@@ -364,7 +364,7 @@ async function pollingMain(client) {
         lastRefillTime = Date.now();
     };
 
-    setInterval(refillTokens, tokensRefillInterval);
+    // setInterval(refillTokens, tokensRefillInterval);
 
     const waitForTokens = async (brand) => {
         if (!isGlobalTrackingEnabled()) {
@@ -436,6 +436,11 @@ async function pollingMain(client) {
                     notify(client, checkDB[i]);
 
                     const addAsin = insertAsin(brand, checkDB[i], 'deal');
+
+                    if (addAsin !== 'SUCCESS') {
+                        console.log(addAsin);
+                        console.log(checkDB[i]);
+                    }
 
                     await new Promise(resolve => setTimeout(resolve, notifyInterval));
                 }

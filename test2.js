@@ -1,6 +1,6 @@
 const { setTrackingForBrand } = require("./database/models/asins");
-const { parseTimeToMilliseconds } = require("./utils/helpers");
+const { parseTimeToMilliseconds, calculateTokensRefillTime } = require("./utils/helpers");
 
-// setTrackingForBrand('Ralph Lauren', false);
+setTrackingForBrand('nike', false);
 
-console.log(parseTimeToMilliseconds('1 min'));
+// console.log(parseTimeToMilliseconds('1 min'));

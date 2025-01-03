@@ -2,7 +2,7 @@ const db = require('./database/db');
 const { removeExpiredAsins } = require('./database/models/asins');
 
 // drop table brands
-// db.prepare('DROP TABLE IF EXISTS discount_range').run();
+// db.prepare('DROP TABLE IF EXISTS asins').run();
 
 const expiresAt = new Date(new Date().setDate(new Date().getDate() - 2)).toUTCString();
 const addedAt = new Date().toUTCString();
@@ -29,6 +29,6 @@ const removeAsin = (asin) => {
     `).run(asin);
 }
 
-insert();
+// insert();
 // removeExpiredAsins();
 // removeAsin('B0CD87CQCG');

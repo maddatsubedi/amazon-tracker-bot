@@ -105,7 +105,7 @@ module.exports = {
         }
 
         const successEmbed = simpleEmbed({
-            description: `**✅ \u200b The brand has been added successfully**\n\n> **Brand**: \`${formattedBrand}\`\n> **New Domains**: \`${domainsString}\`\n> **Tracking**: \`${startTracking ? 'Yes' : 'No'}\``,
+            description: `**✅ \u200b The brand has been added successfully**\n\n> **Brand**: \`${formattedBrand}\`\n> **Domains**: \`${domainsString}\`\n> **Channel**: <#${channel.id}>\n> **Tracking**: \`${startTracking ? 'Yes' : 'No'}\``,
             color: 'Green'
         });
 

@@ -1,10 +1,10 @@
 const { setIsPolling, unsetIsPolling, isPolling } = require('../database/models/config');
 const { parseTimeToMilliseconds } = require('../utils/helpers');
-const { setup, pollingMain } = require('../utils/keepaDealsApi');
+const { setupPolling, pollingMain } = require('../utils/keepaDealsApi');
 
 async function initPolling(client) {
     setIsPolling();
-    setup();
+    setupPolling();
     const result = await pollingMain(client);
     if (result.abort) {
         unsetIsPolling();

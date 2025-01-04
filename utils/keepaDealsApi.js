@@ -335,7 +335,7 @@ const notifyInterval = 1500; // 1.5 seconds
 const brandPollingInterval = 2500; // 2.5 seconds
 const cycleInterval = 60000; // 1 minute
 
-function setup() {
+function setupPolling() {
     initializeDatabase();
     setupGlobalTracking()
 }
@@ -469,6 +469,6 @@ async function pollingMain(client) {
 }
 
 module.exports = {
-    setup,
+    setupPolling,
     pollingMain
 }

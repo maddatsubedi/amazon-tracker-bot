@@ -1,12 +1,14 @@
 const { Events } = require('discord.js');
 const { initPolling } = require('../../tracking/polling');
 const { setIsPolling, unsetIsPolling } = require('../../database/models/config');
+const { setupRolesDB } = require('../../database/models/roles');
+const { setupBotInit } = require('../../utils/setupBotInit');
 
 module.exports = {
 	name: Events.ClientReady,
 	once: true,
 	execute(client) {
 		console.log(`Ready! Logged in as ${client.user.tag}`);
-		initPolling(client);
+		setupBotInit(client); // Setup the bot with the necessary configurations
 	},
 };

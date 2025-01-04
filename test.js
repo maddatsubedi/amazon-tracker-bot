@@ -1,1 +1,4 @@
-// Made some changes and moved to ./utils/keepaDealsApi.js
+const obj = {
+}
+
+console.log(!obj.asd || obj.asd.length === 0);

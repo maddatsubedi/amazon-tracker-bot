@@ -1,9 +1,10 @@
 const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder, PermissionsBitField, ChannelType, PermissionFlagsBits } = require('discord.js');
 const { simpleEmbed, localesEmbed } = require('../../../embeds/generalEmbeds');
-const { setRange, getChannelAndRole } = require('../../../database/models/discount_range');
 const { validateRange, isValidASIN, getDomainIDByLocale, generateRandomHexColor, validateAvailableLocales } = require('../../../utils/helpers');
 const { domain } = require('../../../utils/keepa.json');
-const { getAllBrands, brandExists, insertBrand, setTrackingForBrand } = require('../../../database/models/asins');
+const { getAllBrands, brandExists, insertBrand, setTrackingForBrand, getAllTrackedBrands } = require('../../../database/models/asins');
+const { initPolling, reInitPolling } = require('../../../tracking/polling');
+const { isPolling } = require('../../../database/models/config');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -30,6 +31,12 @@ module.exports = {
         }
 
         await setTrackingForBrand(brand, true);
+
+        const trackingBrands = getAllTrackedBrands();
+
+        if (trackingBrands.length !== 0) {
+            reInitPolling(interaction.client);
+        }
 
         const successEmbed = simpleEmbed({
             description: `**✅ \u200b The brand has been set for tracking**\n\n> **Brand**: \`${brand}\`\n> **Status**: \`Tracking\``,

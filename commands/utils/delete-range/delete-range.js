@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionsBitField, ChannelType, PermissionFlagsBits } = require('discord.js');
 const { simpleEmbed } = require('../../../embeds/generalEmbeds');
-const { setRange, getChannelAndRole, deleteRange } = require('../../../database/models/discount_range');
+const { setRange, getRangeDetails, deleteRange } = require('../../../database/models/discount_range');
 const { validateRange } = require('../../../utils/helpers');
 
 module.exports = {
@@ -25,7 +25,7 @@ module.exports = {
             return await interaction.reply({ embeds: [errorEmbed] });
         }
 
-        const existingRange = getChannelAndRole(range);
+        const existingRange = getRangeDetails(range);
 
         if (!existingRange) {
             const errorEmbed = simpleEmbed(
@@ -37,7 +37,7 @@ module.exports = {
             return await interaction.reply({ embeds: [errorEmbed] });
         }
 
-        const { channelID, roleID } = existingRange;
+        const { roleID } = existingRange;
 
         deleteRange(range);
 
@@ -51,7 +51,6 @@ module.exports = {
             }
         ).addFields(
             { name: 'Range', value: `\`${range}\``, inline: true },
-            { name: 'Channel', value: `<#${channelID}>`, inline: true },
             { name: 'Role', value: `<@&${roleID}>`, inline: true },
         );
 

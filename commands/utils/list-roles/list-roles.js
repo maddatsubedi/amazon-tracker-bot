@@ -1,33 +1,35 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { getAllRoles } = require('../../../database/models/roles');
 const { simpleEmbed } = require('../../../embeds/generalEmbeds');
-const { getAllBrands } = require('../../../database/models/asins');
 
 const ITEMS_PER_PAGE = 5;
 const FIRST_PAGE_ITEMS = 4;
 const SHOW_DESCRIPTION_ON_ALL_PAGES = true;
-const DESCRIPTION = `This is a list of all available brands. Use \`/add-brand\` to add more brands.\n`;
+const DESCRIPTION = `This is a list of all roles in the system, including their associated users and expiration dates.\n`;
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('list-brands')
-        .setDescription('List all the available brands'),
-    isAdmin: true,
-    async execute(interaction) {
-        const brands = await getAllBrands();
+        .setName('list-roles')
+        .setDescription('List all roles in the system with pagination'),
 
-        if (brands.length === 0) {
-            const errorEmbed = simpleEmbed({
-                description: `**No brands available**\n\n>>> You can add brands using \`/add-brand\``,
+    async execute(interaction) {
+        const roles = getAllRoles();
+
+        if (!roles.length) {
+            const emptyEmbed = simpleEmbed({
+                description: `**No roles are currently configured**\n\n>>> You can roles to users using \`/add-role\``,
                 color: 'Yellow',
+                totalPages: 1
             });
-            return await interaction.reply({ embeds: [errorEmbed] });
+            return await interaction.reply({ embeds: [emptyEmbed] });
         }
 
         let currentPage = 0;
-        const totalBrands = brands.length;
+        const totalRoles = roles.length;
 
+        // Total pages calculation adjusted for first page items
         const totalPages = Math.ceil(
-            (totalBrands - FIRST_PAGE_ITEMS) / ITEMS_PER_PAGE + 1
+            (totalRoles - FIRST_PAGE_ITEMS) / ITEMS_PER_PAGE + 1
         );
 
         const generateEmbed = (page) => {
@@ -40,17 +42,17 @@ module.exports = {
                 end = start + ITEMS_PER_PAGE;
             }
 
-            const paginatedBrands = brands.slice(start, end);
+            const paginatedRoles = roles.slice(start, end);
 
             let descriptionContent = '';
-            paginatedBrands.forEach(({ name, domains, channel_id, tracking }) => {
-                descriptionContent += `\n> **Brand**: \`${name}\`\n> **Domains**: \`${domains}\`\n> **Channel**: <#${channel_id}>\n> **Tracking**: \`${tracking ? 'Yes' : 'No'}\`\n`;
+            paginatedRoles.forEach(({ user_id, role_id, added_at, expires_at }) => {
+                descriptionContent += `\n> **User**: <@${user_id}>\n> **Role**: <@&${role_id}>\n> **Added At**: \`${added_at}\`\n> **Expires At**: \`${expires_at}\`\n`;
             });
 
             const embed = new EmbedBuilder()
-                .setTitle('Available Brands')
+                .setTitle('Roles List')
                 .setColor('Random')
-                .setFooter({ text: `Total: ${totalBrands}` });
+                .setFooter({ text: `Total: ${totalRoles}` });
 
             // Add main description only on the first page or based on the flag
             if (page === 0 || SHOW_DESCRIPTION_ON_ALL_PAGES) {
@@ -95,7 +97,7 @@ module.exports = {
 
         const collector = message.createMessageComponentCollector({
             filter: (btnInteraction) => btnInteraction.user.id === interaction.user.id,
-            time: 60000, // 1 minute
+            time: 60000, // Collector timeout: 1 minute
         });
 
         collector.on('collect', async (btnInteraction) => {
@@ -115,7 +117,7 @@ module.exports = {
         });
 
         collector.on('end', () => {
-            message.edit({ components: [] }); // Remove all buttons after collector ends
+            message.edit({ components: [] }); // Remove buttons after timeout
         });
     },
 };

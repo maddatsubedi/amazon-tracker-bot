@@ -2,9 +2,13 @@ const { IMAGE_BASE_URL } = require('./amazon.json');
 const { priceTypesMap: priceTypesMapKeepa, priceTypesAccesor } = require('./keepa.json')
 const { getDealImage, formatKeepaDate, getDomainLocaleByDomainID } = require('./helpers');
 const { keepaAPIKey } = require('../config.json');
-const { getBrandFromName, removeExpiredAsins, insertAsins } = require('../database/models/asins');
+const { getBrandFromName, removeExpiredAsins, insertAsins, getAsinsForBrand, insertSingleAsin, getAllAsins } = require('../database/models/asins');
 
 const processDealData = (deal) => {
+
+    // if (!deal.image) {
+    //     console.log('NO_IMAGE', deal);
+    // }
 
     const dealOf = deal.dealOf;
     const dealOfDomains = Object.keys(dealOf);
@@ -42,6 +46,8 @@ const processDealData = (deal) => {
         return acc;
     }, { value: 0, priceTypes: [] });
 
+    const maxPriceAccesors = maxPercentageDropDay.priceTypes.map(priceType => priceTypesAccesor[priceType]);
+
     const data = { ...deal };
     data.image = getDealImage(deal.image);
     data.creationDate = formatKeepaDate(deal.creationDate);
@@ -51,11 +57,16 @@ const processDealData = (deal) => {
     data.domains = dealOfDomains;
     data.availabePriceTypes = availabePriceTypes;
     data.maxPercentageDropDay = maxPercentageDropDay;
+    data.maxPriceAccesors = maxPriceAccesors;
+
+    // console.log(deal);
+    // console.log(data);
+    // console.log('-----------------');
 
     return data;
 }
 
-const getTokensData = async (tokens) => {
+const getTokensData = async () => {
     const url = `https://api.keepa.com/query?key=${keepaAPIKey}`;
     const response = await fetch(url);
 
@@ -80,13 +91,36 @@ const getTokensData = async (tokens) => {
 
 // getTokensData().then(console.log);
 
-const processDBforDeals = (brand, deals) => {
+const checkDBforNewDeals = (deals, type) => {
+    const removeAsins = removeExpiredAsins(type);
+
+    const dbAsins = getAllAsins(type);
+    const dbAsinsArray = dbAsins.map(asin => asin.asin);
+
+    const newDeals = deals.filter(deal => !dbAsinsArray.includes(deal.asin));
+
+    return newDeals;
+}
+
+const insertAsin = (brand, deal, type) => {
+    const brandData = getBrandFromName(brand);
+    const dealsExpiresAt = new Date(new Date().setDate(new Date().getDate() + 2)).toUTCString();
+    const addedAt = new Date().toUTCString();
+    const dealCreatedAt = formatKeepaDate(deal.creationDate);
+
+    const addAsins = insertSingleAsin(deal.asin, brandData.id, addedAt, dealsExpiresAt, dealCreatedAt, type);
+
+    return addAsins;
+}
+
+const processDBForDeals = (brand, deals, type) => {
     const brandData = getBrandFromName(brand);
     const dealsExpiresAt = new Date(new Date().setDate(new Date().getDate() + 2)).toUTCString();
 
-    const removeAsins = removeExpiredAsins();
-    const expiredAsins = removeAsins.map(asin => asin.asin); 
-    const addAsins = insertAsins(brandData?.id, deals, dealsExpiresAt, 'deal');
+    const removeAsins = removeExpiredAsins(type);
+    const expiredAsins = removeAsins.map(asin => asin.asin);
+
+    const addAsins = insertAsins(brandData.id, deals, dealsExpiresAt, 'deal');
 
     const newDeals = deals.filter(deal => addAsins.successfulAsins.includes(deal.asin));
 
@@ -105,5 +139,7 @@ const processDBforDeals = (brand, deals) => {
 module.exports = {
     processDealData,
     getTokensData,
-    processDBforDeals,
- };
+    checkDBforNewDeals,
+    insertAsin,
+    processDBForDeals,
+};

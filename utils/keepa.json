@@ -32,6 +32,6 @@
         "18": "buyBoxStat"
     },
     "config" : {
-        "mainDomainId": 4
+        "mainDomainId": "4"
     }
 }

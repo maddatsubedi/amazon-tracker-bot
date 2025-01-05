@@ -24,8 +24,10 @@ const getDealMessage = async (deal, roleId) => {
     }
 
     const maxPriceAccesors = deal.maxPriceAccesors;
-    const maxPriceTypes = deal.maxPercentageDropDay.priceTypes.map(priceType => priceTypesMapKeepa[priceType]);
-    const priceTypesString = maxPriceTypes.join(', '); // This will get data from the price types that has the drop percentage day same to maximum drop percentage day
+    const maxPriceTypes = deal.maxPercentageDropDay.priceTypes.map(priceType => priceTypesMapKeepa[priceType]); // This will get data from the price types that has the drop percentage day same to maximum drop percentage day
+    const maxPriceTypesString = maxPriceTypes.join(', ');
+    const maxPriceTypesDealOf = deal.availabePriceTypes.map(priceType => priceTypesMapKeepa[priceType]); // This will get data from the dealOf object of the deal
+    const maxPriceTypesDealOfString = maxPriceTypesDealOf.join(', ');
 
     const priceTypesForGraph = {
         amazon: deal.availabePriceTypes.includes(0) ? 1 : 0,
@@ -53,7 +55,7 @@ const getDealMessage = async (deal, roleId) => {
             { name: 'Prix actuel', value: `> **${currentPrice}**` },
             { name: 'Ancien prix', value: `> **${previousPriceDay}**` },
             { name: 'Réduction :arrow_down:', value: `> **${percentageDropDay}**` },
-            { name: 'Types de prix réduits maximum', value: `> \`${priceTypesString}\`` }
+            { name: 'Types de prix réduits maximum', value: `> \`${maxPriceTypesDealOfString}\`` }
         );
 
     // console.log(deal.productUrls);

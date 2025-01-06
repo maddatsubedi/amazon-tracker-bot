@@ -234,7 +234,7 @@ const deleteBrandAndAsins = (brandName) => {
   }
 };
 
-const getBrandDomains = async (brandName) => {
+const getBrandDomains = (brandName) => {
   const brand = db
     .prepare("SELECT domains FROM brands WHERE name = ?")
     .get(brandName);

@@ -3,7 +3,7 @@ const { calculateTokensRefillTime, parseTimeToMilliseconds } = require("./helper
 
 const defaultBallbackInterval = 2500; // 2.5 seconds
 
-const waitForTokens = async (targetTokens, fallBackInterval = defaultBallbackInterval) => {
+const waitForTokensTarget = async (targetTokens, fallBackInterval = defaultBallbackInterval) => {
     let tokenData = await getTokensData();
     let tokensLeft = tokenData.tokensLeft;
     let refillRate = tokenData.refillRate;
@@ -30,6 +30,10 @@ const waitForTokens = async (targetTokens, fallBackInterval = defaultBallbackInt
     await new Promise(resolve => setTimeout(resolve, (refillTimeInMs + fallBackInterval)));
 
     // Recursively check for tokens
-    return waitForTokens(targetTokens);
+    return waitForTokensTarget(targetTokens);
 
+}
+
+module.exports = {
+    waitForTokensTarget
 }

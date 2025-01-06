@@ -17,6 +17,14 @@ const notify = async (client, deal) => {
             }
         }
 
+        if (!processedDeal[processedDeal.maxPriceAccesors[0]]?.percentageDropDay) {
+            console.log('NO_DISCOUNT_FOUND');
+            return {
+                error: true,
+                errorType: 'NO_DISCOUNT_FOUND'
+            }
+        }
+
         const range = await getRangeForDiscount(processedDeal[processedDeal.maxPriceAccesors[0]].percentageDropDay);
 
         if (!range) {

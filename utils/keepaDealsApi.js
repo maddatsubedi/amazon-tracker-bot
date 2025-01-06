@@ -1,14 +1,16 @@
 const { getBrandDomains, initializeDatabase, getAllBrands, getAllTrackedBrands } = require("../database/models/asins");
-const { getKeepaTimeMinutes, getDomainIDs, formatPrice, formatKeepaDate, getDomainLocaleByDomainID, getRefillTime, calculateTokensRefillTime, parseTimeToMilliseconds } = require("./helpers");
+const { getKeepaTimeMinutes, getDomainIDs, formatPrice, formatKeepaDate, getDomainLocaleByDomainID, getRefillTime, calculateTokensRefillTime, parseTimeToMilliseconds, formatTime } = require("./helpers");
 const { keepaAPIKey } = require('../config.json');
 const { priceTypesMap } = require('./keepa.json');
 const cron = require('node-schedule');
 const { setConfig, getConfig, setupGlobalTracking, isGlobalTrackingEnabled } = require("../database/models/config");
 const notify = require("../tracking/notify");
 const { checkDBforNewDeals, getTokensData, insertAsin } = require("./apiHelpers");
+const { waitForTokensTarget } = require("./waitForTokens");
+const { getProductDetailsGeneral } = require("./keepaProductApi");
 
 const fetchProducts = async (brand, priceType) => {
-    const domains = await getBrandDomains(brand);
+    const domains = getBrandDomains(brand);
     const domainIds = getDomainIDs(domains);
 
     const brandProducts = [];
@@ -331,7 +333,8 @@ const defaultTokensRequirements = 80;
 
 // const tokensRefillInterval = 5000; // 5 seconds
 const tokensWaitFallbackInterval = 2500; // 2.5 seconds
-const notifyInterval = 1500; // 1.5 seconds
+const notifyInterval = 1000; // 1 second
+const maxTokensWaitIntervalForNoti = 120000; // 2 minutes
 const brandPollingInterval = 2500; // 2.5 seconds
 const cycleInterval = 60000; // 1 minute
 
@@ -368,7 +371,10 @@ async function pollingMain(client) {
 
     const waitForTokens = async (brand) => {
         if (!isGlobalTrackingEnabled()) {
-            return;
+            console.log('Global tracking is disabled.');
+            return {
+                abortAll: 'GLOBAL_TRACKING_DISABLED'
+            }
         }
         const requiredTokens = brandTokensRequirements[brand] || defaultTokensRequirements;
 
@@ -411,7 +417,14 @@ async function pollingMain(client) {
                 const brand = brandsNameData[i];
                 console.log(`Processing ${brand}...`);
 
-                await waitForTokens(brand);
+                const tokensWait = await waitForTokens(brand);
+
+                if (tokensWait?.abortAll) {
+                    console.log('Aborting all brands processing.');
+                    return {
+                        abort: tokensWait.abortAll
+                    }
+                }
 
                 console.log(`Fetching: ${brand}...`);
 
@@ -430,9 +443,32 @@ async function pollingMain(client) {
                     continue;
                 }
 
-                console.log(`Notifying and processing ${checkDB.length} new deals for ${brand}...`);
+                const newDealsCount = checkDB.length;
+                const requiredTokensForNoti = ((newDealsCount * 2) + 5);
 
-                for (let i = 0; i < checkDB.length; i++) {
+                const tokenData = await getTokensData();
+                const tokensLeft = tokenData.tokensLeft;
+                const refillRate = tokenData.refillRate;
+                const refillIn = tokenData.refillIn;
+
+                if (tokensLeft < requiredTokensForNoti) {
+                    const refillTime = calculateTokensRefillTime(refillRate, refillIn, tokensLeft, requiredTokensForNoti);
+                    const refillTimeInMs = parseTimeToMilliseconds(refillTime);
+
+                    if (refillTimeInMs < maxTokensWaitIntervalForNoti) {
+                        console.log(`Not enough tokens for notifications, Brand: ${brand}, Refill Time: ${refillTime} [${refillTimeInMs}ms], Fallback: ${tokensWaitFallbackInterval}ms`);
+                        await new Promise(resolve => setTimeout(resolve, (refillTimeInMs + tokensWaitFallbackInterval)));
+                    } else {
+                        const refillTime = formatTime(maxTokensWaitIntervalForNoti);
+                        console.log(`Not enough tokens for notifications, Brand: ${brand}, Refill Time: ${refillTime} [${maxTokensWaitIntervalForNoti}ms], DEFAULT_WAIT`);
+                        await new Promise(resolve => setTimeout(resolve, maxTokensWaitIntervalForNoti));
+                    }
+                }
+
+                console.log(`Notifying and processing ${newDealsCount} new deals for ${brand}...`);
+
+                for (let i = 0; i < newDealsCount; i++) {
+                    const initDate = new Date();
                     await notify(client, checkDB[i]);
 
                     const addAsin = insertAsin(brand, checkDB[i], 'deal');
@@ -443,11 +479,16 @@ async function pollingMain(client) {
                     //     console.log(checkDB[i]);
                     // }
 
-                    await new Promise(resolve => setTimeout(resolve, notifyInterval));
+                    if (i < newDealsCount - 1) { // Don't wait after the last deal because we're going to wait for the next brand
+                        await new Promise(resolve => setTimeout(resolve, notifyInterval));
+                    }
+
+                    const finalDate = new Date();
+                    console.log(`Notified in ${finalDate - initDate}ms`);
                 }
 
                 if (i < brandsNameData.length - 1) { // Don't wait after the last brand because we're going to wait for the next cycle
-                    console.log(`Waiting for ${brandPollingInterval}ms`);
+                    console.log(`Waiting for next brand processing: ${brandPollingInterval}ms`);
                     await new Promise(resolve => setTimeout(resolve, brandPollingInterval));
                 }
 
@@ -458,7 +499,7 @@ async function pollingMain(client) {
                 // }
             }
 
-            console.log('All brands processed.');
+            console.log(`All brands processed, waiting for next cycle: ${cycleInterval}ms`);
             await new Promise(resolve => setTimeout(resolve, cycleInterval));
 
             console.log('Starting the next round of brand processing...');

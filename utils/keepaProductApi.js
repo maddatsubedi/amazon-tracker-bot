@@ -120,7 +120,7 @@ const getProductGraphBuffer = async ({ asin, domain = 1, priceTypes }) => {
     }
 
     // console.log("Domain: ", domain);
-    
+
     const priceTypesUrlParams = priceTypes ? Object.entries(priceTypes).map(([key, value]) => `&${key}=${value}`).join('') : '';
 
     const url = `https://api.keepa.com/graphimage?key=${keepaAPIKey}&domain=${domain}&asin=${asin}${priceTypesUrlParams}`;
@@ -140,6 +140,67 @@ const getProductGraphBuffer = async ({ asin, domain = 1, priceTypes }) => {
     } catch (error) {
         // console.log(error);
         return;
+    }
+
+};
+
+const getProductDetailsGeneral = async (asin, domain = 1) => {
+
+    if (!asin) {
+        return {
+            error: true,
+            errorType: 'InvalidInput',
+            message: 'ASIN is required'
+        }
+    }
+
+    const url = `https://api.keepa.com/product?key=${keepaAPIKey}&asin=${asin}&domain=${domain}`;
+
+    try {
+        const response = await fetch(url);
+        // console.log(response);
+
+        if (!response.ok) {
+            return {
+                error: true,
+                errorType: 'APIError',
+                message: 'Error fetching product data'
+            }
+        }
+
+        const data = await response.json();
+        // console.log(data);
+
+        if (data.products && data.products.length > 0) {
+            const product = data.products[0];
+
+            if (!product.title) {
+                return {
+                    error: true,
+                    errorType: 'PRODUCT_NOT_FOUND',
+                    message: 'Product not found'
+                }
+            }
+
+            return {
+                success: true,
+                product: product
+            }
+
+        } else {
+            return {
+                error: true,
+                errorType: 'PRODUCT_NOT_FOUND',
+                message: 'Product not found'
+            }
+        }
+    } catch (error) {
+        console.log(error);
+        return {
+            error: true,
+            errorType: 'ExceptionError',
+            message: 'Error fetching product data'
+        }
     }
 
 };
@@ -354,6 +415,7 @@ const addProducts = async ({ brand }) => {
 
 module.exports = {
     getProductDetails,
+    getProductDetailsGeneral,
     getProductGraphBuffer,
     addProducts
 };

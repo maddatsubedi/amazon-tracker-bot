@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, AttachmentBuilder, PermissionsBitField, ChannelType, PermissionFlagsBits } = require('discord.js');
 const { priceTypesMap: priceTypesMapKeepa, domain, priceTypesAccesor } = require('../utils/keepa.json');
-const { getProductGraphBuffer } = require('../utils/keepaProductApi');
+const { getProductGraphBuffer, getProductDetailsGeneral } = require('../utils/keepaProductApi');
 const { config } = require('../utils/keepa.json');
 const { formatPrice } = require('../utils/helpers');
 const { getAllRanges, getRangeForDiscount } = require('../database/models/discount_range');
@@ -22,6 +22,8 @@ const getDealMessage = async (deal, roleId) => {
             errorType: 'NO_DEAL'
         }
     }
+
+    const productDetails = await getProductDetailsGeneral(deal.asin, deal.domains[0]);
 
     const maxPriceAccesors = deal.maxPriceAccesors;
     const maxPriceTypes = deal.maxPercentageDropDay.priceTypes.map(priceType => priceTypesMapKeepa[priceType]); // This will get data from the price types that has the drop percentage day same to maximum drop percentage day
@@ -47,7 +49,7 @@ const getDealMessage = async (deal, roleId) => {
         .setColor('Random')
         .setThumbnail(deal.image)
         .setTimestamp()
-        .setFooter({ text: 'alerte baisse de prix' })
+        .setFooter({ text: 'Sniper Resell' })
         .setImage(`attachment://${productGraphAttachment?.name}`)
         .setTitle(`Nouveau Deal  :  ${flagEmojis.join(' ')}`)
         .setDescription(`**[${deal.title}](https://www.amazon.fr/dp/${deal.asin})**`)
@@ -55,8 +57,17 @@ const getDealMessage = async (deal, roleId) => {
             { name: 'Prix actuel', value: `> **${currentPrice}**` },
             { name: 'Ancien prix', value: `> **${previousPriceDay}**` },
             { name: 'Réduction :arrow_down:', value: `> **${percentageDropDay}**` },
-            { name: 'Types de prix réduits maximum', value: `> \`${maxPriceTypesDealOfString}\`` }
         );
+
+    if (productDetails?.product?.monthlySold) {
+        dealEmbed.addFields(
+            { name: 'Ventes mensuelles', value: `> **${productDetails.product.monthlySold} +**` }
+        );
+    }
+
+    dealEmbed.addFields(
+        { name: 'Prix réduits', value: `> \`${maxPriceTypesDealOfString}\`` }
+    );
 
     // console.log(deal.productUrls);
 
@@ -84,9 +95,9 @@ const getDealMessage = async (deal, roleId) => {
         message.files = [productGraphAttachment];
     }
 
-    if (deal[maxPriceAccesors[0]].currentPrice > (deal[maxPriceAccesors[0]].currentPrice + deal[maxPriceAccesors[0]].dropDay)) {
-        console.log(deal);
-    }
+    // if (deal[maxPriceAccesors[0]].currentPrice > (deal[maxPriceAccesors[0]].currentPrice + deal[maxPriceAccesors[0]].dropDay)) {
+    //     console.log(deal);
+    // }
 
     return message;
 }

@@ -4,6 +4,7 @@ const { getProductGraphBuffer, getProductDetailsGeneral } = require('../utils/ke
 const { config } = require('../utils/keepa.json');
 const { formatPrice } = require('../utils/helpers');
 const { getAllRanges, getRangeForDiscount } = require('../database/models/discount_range');
+const { checkDealEffectiveness } = require('../test');
 
 const getDealMessage = async (deal, roleId) => {
 
@@ -45,6 +46,10 @@ const getDealMessage = async (deal, roleId) => {
     const previousPriceDay = (deal[maxPriceAccesors[0]].currentPrice && deal[maxPriceAccesors[0]].dropDay) ? formatPrice(deal[maxPriceAccesors[0]].currentPrice + deal[maxPriceAccesors[0]].dropDay, deal.domains[0], 'deal') : 'N/A';
     const percentageDropDay = deal[maxPriceAccesors[0]].percentageDropDay ? `${deal[maxPriceAccesors[0]].percentageDropDay} %` : 'N/A';
 
+    const test = checkDealEffectiveness(deal.availableDropDays, deal.availabeDropWeeks, deal.availableDropMonths);
+
+    const test_string = `\n\`\`\`For testing purposes:\n\n${test ? `Average[D,W,M]: [${Number.isInteger(test.averageDropDays) ? test.averageDropDays : test.averageDropDays.toFixed(2)}, ${Number.isInteger(test.averageDropWeeks) ? test.averageDropWeeks : test.averageDropWeeks.toFixed(2)}, ${Number.isInteger(test.averageDropMonths) ? test.averageDropMonths : test.averageDropMonths.toFixed(2)}]` : `Test`}\nDays: [${deal.availableDropDays.join(', ')}]\nWeeks: [${deal.availabeDropWeeks.join(', ')}]\nMonths: [${deal.availableDropMonths.join(', ')}]\`\`\``;
+
     const dealEmbed = new EmbedBuilder()
         .setColor('Random')
         .setThumbnail(deal.image)
@@ -52,7 +57,7 @@ const getDealMessage = async (deal, roleId) => {
         .setFooter({ text: 'Sniper Resell' })
         .setImage(`attachment://${productGraphAttachment?.name}`)
         .setTitle(`Nouveau Deal  :  ${flagEmojis.join(' ')}`)
-        .setDescription(`**[${deal.title}](https://www.amazon.fr/dp/${deal.asin})**`)
+        .setDescription(`**[${deal.title}](https://www.amazon.fr/dp/${deal.asin})**\n${test_string}`)
         .addFields(
             { name: 'Prix actuel', value: `> **${currentPrice}**` },
             { name: 'Ancien prix', value: `> **${previousPriceDay}**` },

@@ -333,10 +333,11 @@ const defaultTokensRequirements = 80;
 
 // const tokensRefillInterval = 5000; // 5 seconds
 const tokensWaitFallbackInterval = 2500; // 2.5 seconds
-const notifyInterval = 1000; // 1 second
-const maxTokensWaitIntervalForNoti = 120000; // 2 minutes
+const notiTokensWaitInitial = 180000; // 3 minutes
+const notiTokensWaitFurther = 90000; // 1.5 minutes
 const brandPollingInterval = 2500; // 2.5 seconds
 const cycleInterval = 60000; // 1 minute
+let pollingStarted = false;
 
 function setupPolling() {
     initializeDatabase();
@@ -360,7 +361,7 @@ async function pollingMain(client) {
     let cronJob = null;
 
     const refillTokens = async () => {
-        let tokenData = await getTokensData()
+        let tokenData = await getTokensData();
         tokensLeft = tokenData.tokensLeft;
         refillRate = tokenData.refillRate;
         refillIn = tokenData.refillIn;
@@ -451,40 +452,27 @@ async function pollingMain(client) {
                 const refillRate = tokenData.refillRate;
                 const refillIn = tokenData.refillIn;
 
-                if (tokensLeft < requiredTokensForNoti) {
-                    const refillTime = calculateTokensRefillTime(refillRate, refillIn, tokensLeft, requiredTokensForNoti);
-                    const refillTimeInMs = parseTimeToMilliseconds(refillTime);
+                const refillTime = calculateTokensRefillTime(refillRate, refillIn, tokensLeft, requiredTokensForNoti);
+                const refillTimeInMs = parseTimeToMilliseconds(refillTime);
 
-                    if (refillTimeInMs < maxTokensWaitIntervalForNoti) {
+                if (tokensLeft < requiredTokensForNoti) {
+                    const waitInterval = pollingStarted ? notiTokensWaitFurther : notiTokensWaitInitial;
+                    if (refillTimeInMs < waitInterval) {
                         console.log(`Not enough tokens for notifications, Brand: ${brand}, Refill Time: ${refillTime} [${refillTimeInMs}ms], Fallback: ${tokensWaitFallbackInterval}ms`);
                         await new Promise(resolve => setTimeout(resolve, (refillTimeInMs + tokensWaitFallbackInterval)));
                     } else {
-                        const refillTime = formatTime(maxTokensWaitIntervalForNoti);
-                        console.log(`Not enough tokens for notifications, Brand: ${brand}, Refill Time: ${refillTime} [${maxTokensWaitIntervalForNoti}ms], DEFAULT_WAIT`);
-                        await new Promise(resolve => setTimeout(resolve, maxTokensWaitIntervalForNoti));
+                        const refillTime = formatTime(waitInterval);
+                        console.log(`Not enough tokens for notifications, Brand: ${brand}, Refill Time: ${refillTime} [${waitInterval}ms], DEFAULT_WAIT`);
+                        await new Promise(resolve => setTimeout(resolve, waitInterval));
                     }
                 }
 
                 console.log(`Notifying and processing ${newDealsCount} new deals for ${brand}...`);
 
                 for (let i = 0; i < newDealsCount; i++) {
-                    const initDate = new Date();
                     await notify(client, checkDB[i]);
 
                     const addAsin = insertAsin(brand, checkDB[i], 'deal');
-
-                    // if (addAsin !== 'SUCCESS') {
-                    //     console.log(brand);
-                    //     console.log(addAsin);
-                    //     console.log(checkDB[i]);
-                    // }
-
-                    if (i < newDealsCount - 1) { // Don't wait after the last deal because we're going to wait for the next brand
-                        await new Promise(resolve => setTimeout(resolve, notifyInterval));
-                    }
-
-                    const finalDate = new Date();
-                    console.log(`Notified in ${finalDate - initDate}ms`);
                 }
 
                 if (i < brandsNameData.length - 1) { // Don't wait after the last brand because we're going to wait for the next cycle
@@ -498,6 +486,8 @@ async function pollingMain(client) {
                 //     });
                 // }
             }
+
+            pollingStarted = true;
 
             console.log(`All brands processed, waiting for next cycle: ${cycleInterval}ms`);
             await new Promise(resolve => setTimeout(resolve, cycleInterval));

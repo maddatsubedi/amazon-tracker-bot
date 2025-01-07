@@ -1,9 +1,13 @@
 const { getBrandFromName } = require("../database/models/asins");
 const { getRangeForDiscount } = require("../database/models/discount_range");
 const { getDealMessage } = require("../embeds/dealsMessage");
+const { checkDealEffectiveness } = require("../test");
 const { processDealData } = require("../utils/apiHelpers");
 const { priceTypesMap: priceTypesMapKeepa, priceTypesAccesor } = require('../utils/keepa.json');
 
+const RATE_LIMIT_INTERVAL = 250; // 0.25 seconds, 4 requests per second
+let lastRequestTime = 0;
+let started = false;
 const notify = async (client, deal) => {
 
     try {
@@ -65,8 +69,13 @@ const notify = async (client, deal) => {
             }
         }
 
+        if (Date.now() - lastRequestTime < RATE_LIMIT_INTERVAL && started) {
+            await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_INTERVAL));
+        }
         await channel.send(dealMessage);
         // console.log(`Deal Notified: ${processedDeal.title}`);
+        lastRequestTime = Date.now();
+        started = true;
     } catch (error) {
         console.log(error);
     }

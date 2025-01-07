@@ -1,15 +1,19 @@
-const { calculateTokensRefillTime, parseTimeToMilliseconds, formatTime } = require("./utils/helpers");
+const availableDropDays = [ 43, 43, 43 ]
+const availabeDropWeeks = [ 10, 10, 10 ]
+const availableDropMonths = [ 7, 3, 7 ]
 
-const newDealsCount = 20;
-const requiredTokensForNoti = ((newDealsCount * 2) + 5);
-const refillRate = 20; // 25
-const refillIn = 1200;
-const tokensLeft = 5;
+const checkDealEffectiveness = (dropDays, dropWeeks, dropMonths) => {
+    const averageDropDays = dropDays.reduce((acc, dropDay) => acc + dropDay) / dropDays.length
+    const averageDropWeeks = dropWeeks.reduce((acc, dropWeek) => acc + dropWeek) / dropWeeks.length
+    const averageDropMonths = dropMonths.reduce((acc, dropMonth) => acc + dropMonth) / dropMonths.length
 
-const refillTime = calculateTokensRefillTime(refillRate, refillIn, tokensLeft, requiredTokensForNoti);
-const refillTimeInMs = parseTimeToMilliseconds(refillTime);
+    return {
+        averageDropDays,
+        averageDropWeeks,
+        averageDropMonths
+    }
+}
 
-// console.log("refillTime", refillTime);
-// console.log("refillTimeInMs", refillTimeInMs);
-
-console.log(formatTime(120000));
+module.exports = {
+    checkDealEffectiveness
+}

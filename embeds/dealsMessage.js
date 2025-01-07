@@ -1,9 +1,10 @@
 const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, AttachmentBuilder, PermissionsBitField, ChannelType, PermissionFlagsBits } = require('discord.js');
 const { priceTypesMap: priceTypesMapKeepa, domain, priceTypesAccesor } = require('../utils/keepa.json');
-const { getProductGraphBuffer } = require('../utils/keepaProductApi');
+const { getProductGraphBuffer, getProductDetailsGeneral } = require('../utils/keepaProductApi');
 const { config } = require('../utils/keepa.json');
 const { formatPrice } = require('../utils/helpers');
 const { getAllRanges, getRangeForDiscount } = require('../database/models/discount_range');
+const { checkDealEffectiveness } = require('../test');
 
 const getDealMessage = async (deal, roleId) => {
 
@@ -23,9 +24,13 @@ const getDealMessage = async (deal, roleId) => {
         }
     }
 
+    const productDetails = await getProductDetailsGeneral(deal.asin, deal.domains[0]);
+
     const maxPriceAccesors = deal.maxPriceAccesors;
-    const maxPriceTypes = deal.maxPercentageDropDay.priceTypes.map(priceType => priceTypesMapKeepa[priceType]);
-    const priceTypesString = maxPriceTypes.join(', '); // This will get data from the price types that has the drop percentage day same to maximum drop percentage day
+    const maxPriceTypes = deal.maxPercentageDropDay.priceTypes.map(priceType => priceTypesMapKeepa[priceType]); // This will get data from the price types that has the drop percentage day same to maximum drop percentage day
+    const maxPriceTypesString = maxPriceTypes.join(', ');
+    const maxPriceTypesDealOf = deal.availabePriceTypes.map(priceType => priceTypesMapKeepa[priceType]); // This will get data from the dealOf object of the deal
+    const maxPriceTypesDealOfString = maxPriceTypesDealOf.join(', ');
 
     const priceTypesForGraph = {
         amazon: deal.availabePriceTypes.includes(0) ? 1 : 0,
@@ -41,20 +46,33 @@ const getDealMessage = async (deal, roleId) => {
     const previousPriceDay = (deal[maxPriceAccesors[0]].currentPrice && deal[maxPriceAccesors[0]].dropDay) ? formatPrice(deal[maxPriceAccesors[0]].currentPrice + deal[maxPriceAccesors[0]].dropDay, deal.domains[0], 'deal') : 'N/A';
     const percentageDropDay = deal[maxPriceAccesors[0]].percentageDropDay ? `${deal[maxPriceAccesors[0]].percentageDropDay} %` : 'N/A';
 
+    const test = checkDealEffectiveness(deal.availableDropDays, deal.availabeDropWeeks, deal.availableDropMonths);
+
+    const test_string = `\n\`\`\`For testing purposes:\n\n${test ? `Average[D,W,M]: [${Number.isInteger(test.averageDropDays) ? test.averageDropDays : test.averageDropDays.toFixed(2)}, ${Number.isInteger(test.averageDropWeeks) ? test.averageDropWeeks : test.averageDropWeeks.toFixed(2)}, ${Number.isInteger(test.averageDropMonths) ? test.averageDropMonths : test.averageDropMonths.toFixed(2)}]` : `Test`}\nDays: [${deal.availableDropDays.join(', ')}]\nWeeks: [${deal.availabeDropWeeks.join(', ')}]\nMonths: [${deal.availableDropMonths.join(', ')}]\`\`\``;
+
     const dealEmbed = new EmbedBuilder()
         .setColor('Random')
         .setThumbnail(deal.image)
         .setTimestamp()
-        .setFooter({ text: 'alerte baisse de prix' })
+        .setFooter({ text: 'Sniper Resell' })
         .setImage(`attachment://${productGraphAttachment?.name}`)
         .setTitle(`Nouveau Deal  :  ${flagEmojis.join(' ')}`)
-        .setDescription(`**[${deal.title}](https://www.amazon.fr/dp/${deal.asin})**`)
+        .setDescription(`**[${deal.title}](https://www.amazon.fr/dp/${deal.asin})**\n${test_string}`)
         .addFields(
             { name: 'Prix actuel', value: `> **${currentPrice}**` },
             { name: 'Ancien prix', value: `> **${previousPriceDay}**` },
             { name: 'Réduction :arrow_down:', value: `> **${percentageDropDay}**` },
-            { name: 'Types de prix réduits maximum', value: `> \`${priceTypesString}\`` }
         );
+
+    if (productDetails?.product?.monthlySold) {
+        dealEmbed.addFields(
+            { name: 'Ventes mensuelles', value: `> **${productDetails.product.monthlySold} +**` }
+        );
+    }
+
+    dealEmbed.addFields(
+        { name: 'Prix réduits', value: `> \`${maxPriceTypesDealOfString}\`` }
+    );
 
     // console.log(deal.productUrls);
 
@@ -82,9 +100,9 @@ const getDealMessage = async (deal, roleId) => {
         message.files = [productGraphAttachment];
     }
 
-    if (deal[maxPriceAccesors[0]].currentPrice > (deal[maxPriceAccesors[0]].currentPrice + deal[maxPriceAccesors[0]].dropDay)) {
-        console.log(deal);
-    }
+    // if (deal[maxPriceAccesors[0]].currentPrice > (deal[maxPriceAccesors[0]].currentPrice + deal[maxPriceAccesors[0]].dropDay)) {
+    //     console.log(deal);
+    // }
 
     return message;
 }

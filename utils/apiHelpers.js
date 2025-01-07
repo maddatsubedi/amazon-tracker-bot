@@ -32,6 +32,10 @@ const processDealData = (deal) => {
     }, []);
 
     const availabePriceTypes = [...new Set(availabePriceTypesArray)];
+    const availablePriceAccesors = availabePriceTypes.map(priceType => priceTypesAccesor[priceType]);
+    const availableDropDays = availablePriceAccesors.map(priceAccesor => deal[priceAccesor].percentageDropDay);
+    const availabeDropWeeks = availablePriceAccesors.map(priceAccesor => deal[priceAccesor].percentageDropWeek);
+    const availableDropMonths = availablePriceAccesors.map(priceAccesor => deal[priceAccesor].percentageDropMonth);
 
     const maxPercentageDropDay = availabePriceTypes.reduce((acc, priceType) => {
         const percentageDropDay = deal[priceTypesAccesor[priceType]].percentageDropDay;
@@ -58,6 +62,10 @@ const processDealData = (deal) => {
     data.availabePriceTypes = availabePriceTypes;
     data.maxPercentageDropDay = maxPercentageDropDay;
     data.maxPriceAccesors = maxPriceAccesors;
+    data.availablePriceAccesors = availablePriceAccesors;
+    data.availableDropDays = availableDropDays;
+    data.availabeDropWeeks = availabeDropWeeks;
+    data.availableDropMonths = availableDropMonths;
 
     // console.log(deal);
     // console.log(data);

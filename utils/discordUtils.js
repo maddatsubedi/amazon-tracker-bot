@@ -6,7 +6,7 @@ const expiresRolesRemovalInterval = 60000; // 1 minute
 const removeExpiredRolesFromUser = async (client, roles) => {
     if (!roles || roles.deletedRoles.length ===0) return;
     if (roles.deletedRoles.length !== roles.expiredRoles.length) {
-        console.log('Error in removing expired roles from user');
+        console.log('Error in removing expired roles of users from database');
         console.log(roles);
     }
 

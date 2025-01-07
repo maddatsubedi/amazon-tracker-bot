@@ -195,6 +195,21 @@ function getRefillTime(tokensLeft, refillIn, refillRate) {
     return refillTime;
 }
 
+function formatTime(ms) {
+    let seconds = Math.floor(ms / 1000);
+    let minutes = Math.floor(seconds / 60);
+    let hours = Math.floor(minutes / 60);
+    seconds = seconds % 60;
+    minutes = minutes % 60;
+
+    let timeString = '';
+    if (hours > 0) timeString += `${hours} hr : `;
+    if (minutes > 0 || hours > 0) timeString += `${minutes} min : `;
+    timeString += `${seconds} sec`;
+
+    return timeString.trim();
+}
+
 function calculateTokensRefillTime(refillRate, refillIn, tokensLeft, tokensRequired) {
     const targetTokens = tokensRequired;
 
@@ -204,21 +219,6 @@ function calculateTokensRefillTime(refillRate, refillIn, tokensLeft, tokensRequi
 
     const refillInterval = 60000;
     let timeLeft = 0;
-
-    function formatTime(ms) {
-        let seconds = Math.floor(ms / 1000);
-        let minutes = Math.floor(seconds / 60);
-        let hours = Math.floor(minutes / 60);
-        seconds = seconds % 60;
-        minutes = minutes % 60;
-
-        let timeString = '';
-        if (hours > 0) timeString += `${hours} hr : `;
-        if (minutes > 0 || hours > 0) timeString += `${minutes} min : `;
-        timeString += `${seconds} sec`;
-
-        return timeString.trim();
-    }
 
     if (tokensLeft < targetTokens) {
         let firstRefillTime = refillIn;
@@ -335,4 +335,5 @@ module.exports = {
     getDealImage,
     parseTimeToMilliseconds,
     validateLowerCase,
+    formatTime
 };

@@ -17,6 +17,7 @@ function reInitPolling(client) {
     }
 }
 
+
 module.exports = {
     initPolling,
     reInitPolling

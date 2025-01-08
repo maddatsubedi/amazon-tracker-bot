@@ -4,6 +4,66 @@ const { getDealImage, formatKeepaDate, getDomainLocaleByDomainID } = require('./
 const { keepaAPIKey } = require('../config.json');
 const { getBrandFromName, removeExpiredAsins, insertAsins, getAsinsForBrand, insertSingleAsin, getAllAsins } = require('../database/models/asins');
 
+const GOOD_DEAL = 'Good';
+const PRICE_ERROR = 'Price Error';
+const FAKE_DEAL = 'Fake';
+
+function calculatePriceChange(currentPrice, avgDay, avgWeek, avgMonth) {
+    
+    function percentageChange(newPrice, oldPrice) {
+        if (oldPrice === 0) {
+            return null; // Avoid division by zero
+        }
+        return ((newPrice - oldPrice) / oldPrice) * 100;
+    }
+
+    function assessDeal(currentPrice, probablePrice) {
+        if (currentPrice < probablePrice * 0.95) {
+            return GOOD_DEAL;
+        } else if(currentPrice < probablePrice * 0.2) {
+            return PRICE_ERROR;
+        }
+        else{
+            return FAKE_DEAL;
+        }
+    }
+
+    const probablePrice = (avgDay * 1 + avgWeek * 7 + avgMonth * 30) / (1 + 7 + 30);
+
+    const dealAssessment = assessDeal(currentPrice, probablePrice);
+
+    return {
+        day: percentageChange(currentPrice, avgDay),
+        week: percentageChange(currentPrice, avgWeek),
+        month: percentageChange(currentPrice, avgMonth),
+        probablePrice: probablePrice,
+        dealAssessment: dealAssessment,
+    };
+}
+
+
+const isDealAnFake = (processedDeal) => {
+    if (!deal?.asin) {
+        return true;
+    }
+
+    if(deal.availabePriceTypes.length === 0) {
+        return true;
+    }
+
+    for(const priceType of deal.availabePriceTypes) {
+        let accesorDeal = deal[priceTypesAccesor[priceType]]
+        if(accesorDeal) {
+            let priceChange = calculatePriceChange(accesorDeal.currentPrice, accesorDeal.avgDay, accesorDeal.avgWeek, accesorDeal.avgMonth);
+            if(priceChange.dealAssessment === FAKE_DEAL || priceChange.dealAssessment === PRICE_ERROR) {
+                return priceChange.dealAssessment;
+            }
+        }
+    }
+
+    return GOOD_DEAL;
+}
+
 const processDealData = (deal) => {
 
     // if (!deal.image) {
@@ -150,4 +210,8 @@ module.exports = {
     checkDBforNewDeals,
     insertAsin,
     processDBForDeals,
+    isDealAnFake,
+    GOOD_DEAL,
+    PRICE_ERROR,
+    FAKE_DEAL,
 };

@@ -58,7 +58,7 @@ module.exports = {
                 return await interaction.reply({ embeds: [errorEmbed] });
             }
 
-            const roleExists = message.components.some(row => row.components.some(button => button.customId === `button_role_${role.id}`));
+            const roleExists = message.components.some(row => row.components.some(button => button.customId === `button_role:${role.id}`));
 
             if (roleExists) {
                 const errorEmbed = simpleEmbed({
@@ -69,7 +69,7 @@ module.exports = {
             }
 
             const button = new ButtonBuilder()
-                .setCustomId(`button_role_${role.id}`)
+                .setCustomId(`button_role:${role.id}`)
                 .setLabel(role.name)
                 .setStyle(ButtonStyle.Primary)
 

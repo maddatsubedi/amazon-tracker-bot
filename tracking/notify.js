@@ -1,25 +1,28 @@
 const { getBrandFromName } = require("../database/models/asins");
 const { getRangeForDiscount } = require("../database/models/discount_range");
 const { getDealMessage } = require("../embeds/dealsMessage");
-const { checkDealEffectiveness } = require("../test");
-const { processDealData,isDealAnFake , FAKE_DEAL,GOOD_DEAL,PRICE_ERROR} = require("../utils/apiHelpers");
+// const { checkDealEffectiveness } = require("../test");
+const { processDealData, analyzeDeal, FAKE_DEAL, GOOD_DEAL, PRICE_ERROR, ERROR } = require("../utils/apiHelpers");
 const { priceTypesMap: priceTypesMapKeepa, priceTypesAccesor } = require('../utils/keepa.json');
 
 const RATE_LIMIT_INTERVAL = 250; // 0.25 seconds, 4 requests per second
 let lastRequestTime = 0;
 let started = false;
+
 const notify = async (client, deal) => {
 
     try {
 
         const processedDeal = processDealData(deal);
-        const dealAnalysis = isDealAnFake(processedDeal);
-        if(dealAnalysis == FAKE_DEAL){
-            return {
-                error: true,
-                errorType: 'DEAL_IS_FAKE'
-            }
-        }
+
+        const dealAnalysis = analyzeDeal(processedDeal);
+        
+        // if(dealAnalysis == FAKE_DEAL){
+        //     return {
+        //         error: true,
+        //         errorType: 'DEAL_IS_FAKE'
+        //     }
+        // }
 
         if (!processedDeal) {
             return {
@@ -67,7 +70,7 @@ const notify = async (client, deal) => {
             }
         }
 
-        const dealMessage = await getDealMessage(processedDeal, roleID);
+        const dealMessage = await getDealMessage(processedDeal, roleID, dealAnalysis);
 
         if (!dealMessage) {
             return {

@@ -7,6 +7,7 @@ const { getBrandFromName, removeExpiredAsins, insertAsins, getAsinsForBrand, ins
 const GOOD_DEAL = 'Good';
 const PRICE_ERROR = 'Price Error';
 const FAKE_DEAL = 'Fake';
+const ERROR = 'System Error';
 
 function calculatePriceChange(currentPrice, avgDay, avgWeek, avgMonth) {
     
@@ -41,14 +42,13 @@ function calculatePriceChange(currentPrice, avgDay, avgWeek, avgMonth) {
     };
 }
 
-
-const isDealAnFake = (processedDeal) => {
+const analyzeDeal = (processedDeal) => {
     if (!deal?.asin) {
-        return true;
+        return ERROR;
     }
 
     if(deal.availabePriceTypes.length === 0) {
-        return true;
+        return ERROR;
     }
 
     for(const priceType of deal.availabePriceTypes) {
@@ -210,8 +210,9 @@ module.exports = {
     checkDBforNewDeals,
     insertAsin,
     processDBForDeals,
-    isDealAnFake,
+    analyzeDeal,
     GOOD_DEAL,
     PRICE_ERROR,
     FAKE_DEAL,
+    ERROR,
 };

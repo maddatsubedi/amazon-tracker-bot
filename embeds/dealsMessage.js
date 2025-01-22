@@ -6,7 +6,7 @@ const { formatPrice } = require('../utils/helpers');
 const { getAllRanges, getRangeForDiscount } = require('../database/models/discount_range');
 // const { checkDealEffectiveness } = require('../test');
 
-const getDealMessage = async (deal, roleId) => {
+const getDealMessage = async (deal, roleId, dealAnalysis) => {
 
     if (!deal) {
         return {
@@ -53,7 +53,7 @@ const getDealMessage = async (deal, roleId) => {
         .setFooter({ text: 'Sniper Resell' })
         .setImage(`attachment://${productGraphAttachment?.name}`)
         .setTitle(`Nouveau Deal  :  ${flagEmojis.join(' ')}`)
-        .setDescription(`**[${deal.title}](https://www.amazon.fr/dp/${deal.asin})**`)
+        .setDescription(`**[${deal.title}](https://www.amazon.fr/dp/${deal.asin})**\n\n\`\`\`${dealAnalysis}\`\`\``)
         .addFields(
             { name: 'Prix actuel', value: `> **${currentPrice}**` },
             { name: 'Ancien prix', value: `> **${previousPriceDay}**` },

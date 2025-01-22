@@ -4,7 +4,7 @@ const { getProductGraphBuffer, getProductDetailsGeneral } = require('../utils/ke
 const { config } = require('../utils/keepa.json');
 const { formatPrice } = require('../utils/helpers');
 const { getAllRanges, getRangeForDiscount } = require('../database/models/discount_range');
-const { checkDealEffectiveness } = require('../test');
+// const { checkDealEffectiveness } = require('../test');
 
 const getDealMessage = async (deal, roleId) => {
 

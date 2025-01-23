@@ -9,14 +9,20 @@ async function initPolling(client) {
     if (result.abort) {
         unsetIsPolling();
     }
+    return result;
 }
 
-function reInitPolling(client) {
+async function reInitPolling(client) {
     if (!isPolling()) {
-        initPolling(client);
+        const result = await initPolling(client);
+        return result;
+    } else {
+        return {
+            abort: "POLLING_ALREADY_RUNNING",
+            abortMessage: "Polling is already running"
+        };
     }
 }
-
 
 module.exports = {
     initPolling,

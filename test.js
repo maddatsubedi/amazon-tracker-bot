@@ -1,3 +1,3 @@
-const regex = /^button_role:(\d+)$/;
+const { calculateTokensRefillTime } = require("./utils/helpers");
 
-console.log(regex.test('button_role:2')); // true
+console.log(calculateTokensRefillTime(0, 10, 20, 100));

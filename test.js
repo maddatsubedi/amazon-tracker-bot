@@ -1,3 +1,6 @@
-const { calculateTokensRefillTime } = require("./utils/helpers");
+const func = (a, b) => {
+    console.log(a);
+    console.log(b);
+};
 
-console.log(calculateTokensRefillTime(0, 10, 20, 100));
+func(1);

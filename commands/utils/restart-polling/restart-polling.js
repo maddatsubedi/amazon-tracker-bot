@@ -15,8 +15,6 @@ module.exports = {
 
         await interaction.deferReply();
 
-        const pollingInit = await reInitPolling(interaction.client);
-
-        console.log("pollingInit", pollingInit);
+        const pollingInit = reInitPolling(interaction.client, interaction);
     },
 };

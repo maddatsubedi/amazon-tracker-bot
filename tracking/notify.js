@@ -61,7 +61,9 @@ const notify = async (client, deal) => {
 
         const channelID = brandDetails.channel_id;
 
-        const channel = await client.channels.fetch(channelID);
+        const channel = await client.channels.fetch(channelID).catch((error) => {
+            console.log("Error fetching DB saved channel from discord: ", error.message);
+        });
 
         if (!channel) {
             return {

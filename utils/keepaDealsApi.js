@@ -8,6 +8,7 @@ const notify = require("../tracking/notify");
 const { checkDBforNewDeals, getTokensData, insertAsin } = require("./apiHelpers");
 const { waitForTokensTarget } = require("./waitForTokens");
 const { getProductDetailsGeneral } = require("./keepaProductApi");
+const { simpleEmbed } = require("../embeds/generalEmbeds");
 
 const fetchProducts = async (brand, priceType) => {
     const domains = getBrandDomains(brand);
@@ -349,7 +350,7 @@ const hasEnoughTokens = (brand) => {
     return tokensLeft >= requiredTokens;
 };
 
-async function pollingMain(client) {
+async function pollingMain(client, interaction) {
     const MAX_TOKENS = 1200;
 
     let tokenData = await getTokensData();
@@ -359,6 +360,7 @@ async function pollingMain(client) {
     let refillIn = tokenData.refillIn;
     let lastRefillTime = Date.now();
     let cronJob = null;
+    let interactionRepliedFlag = false;
 
     const refillTokens = async () => {
         let tokenData = await getTokensData();
@@ -367,7 +369,7 @@ async function pollingMain(client) {
         refillIn = tokenData.refillIn;
         lastRefillTime = Date.now();
 
-        if (refillRate === 0) {
+        if (refillRate <= 0) {
             return {
                 abort: 'NO_REFILL_RATE : SUBSCRIPTION_EXPIRED',
                 abortMessage: 'Keepa subscription expired. Please renew the subscription.'
@@ -377,7 +379,7 @@ async function pollingMain(client) {
 
     // setInterval(refillTokens, tokensRefillInterval);
 
-    const waitForTokens = async (brand) => {
+    const waitForTokens = async (brand, brandsLength) => {
         if (!isGlobalTrackingEnabled()) {
             console.log('Global tracking is disabled.');
             return {
@@ -395,6 +397,17 @@ async function pollingMain(client) {
                 abort: tokensRefill.abort,
                 abortMessage: tokensRefill.abortMessage
             }
+        }
+
+        if (interaction && !interactionRepliedFlag) {
+            const successEmbed = simpleEmbed({
+                description: `**Polling successfully started**`,
+                color: 'Green'
+            }).addFields(
+                { name: '> Total Brands', value: `> ${brandsLength}` },
+            );
+            await interaction.editReply({ embeds: [successEmbed] });
+            interactionRepliedFlag = true;
         }
 
         if (tokensLeft >= requiredTokens) {
@@ -437,7 +450,7 @@ async function pollingMain(client) {
                 const brand = brandsNameData[i];
                 console.log(`Processing ${brand}...`);
 
-                const tokensWait = await waitForTokens(brand);
+                const tokensWait = await waitForTokens(brand, brandsNameData.length);
 
                 if (tokensWait?.abort) {
                     console.log('Aborting all brands processing.');

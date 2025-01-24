@@ -8,6 +8,7 @@ const notify = require("../tracking/notify");
 const { checkDBforNewDeals, getTokensData, insertAsin } = require("./apiHelpers");
 const { waitForTokensTarget } = require("./waitForTokens");
 const { getProductDetailsGeneral } = require("./keepaProductApi");
+const { simpleEmbed } = require("../embeds/generalEmbeds");
 
 const fetchProducts = async (brand, priceType) => {
     const domains = getBrandDomains(brand);
@@ -349,7 +350,7 @@ const hasEnoughTokens = (brand) => {
     return tokensLeft >= requiredTokens;
 };
 
-async function pollingMain(client) {
+async function pollingMain(client, interaction) {
     const MAX_TOKENS = 1200;
 
     let tokenData = await getTokensData();
@@ -359,6 +360,7 @@ async function pollingMain(client) {
     let refillIn = tokenData.refillIn;
     let lastRefillTime = Date.now();
     let cronJob = null;
+    let interactionRepliedFlag = false;
 
     const refillTokens = async () => {
         let tokenData = await getTokensData();
@@ -366,20 +368,48 @@ async function pollingMain(client) {
         refillRate = tokenData.refillRate;
         refillIn = tokenData.refillIn;
         lastRefillTime = Date.now();
+
+        if (refillRate <= 0) {
+            return {
+                abort: 'NO_REFILL_RATE : SUBSCRIPTION_EXPIRED',
+                abortMessage: 'Keepa subscription expired. Please renew the subscription.'
+            }
+        }
     };
 
     // setInterval(refillTokens, tokensRefillInterval);
 
-    const waitForTokens = async (brand) => {
+    const waitForTokens = async (brand, brandsLength) => {
         if (!isGlobalTrackingEnabled()) {
             console.log('Global tracking is disabled.');
             return {
-                abortAll: 'GLOBAL_TRACKING_DISABLED'
+                abort: 'GLOBAL_TRACKING_DISABLED',
+                abortMessage: 'Global tracking is disabled. Please enable global tracking.'
             }
         }
         const requiredTokens = brandTokensRequirements[brand] || defaultTokensRequirements;
 
-        await refillTokens();
+        const tokensRefill = await refillTokens();
+
+        if (tokensRefill?.abort) {
+            console.log('Tokens refill rate is 0. Subscription expired.');
+            return {
+                abort: tokensRefill.abort,
+                abortMessage: tokensRefill.abortMessage
+            }
+        }
+
+        if (interaction && !interactionRepliedFlag) {
+            const successEmbed = simpleEmbed({
+                description: `**Polling successfully started**`,
+                color: 'Green'
+            }).addFields(
+                { name: '> Total Brands', value: `> ${brandsLength}` },
+            );
+            await interaction.editReply({ embeds: [successEmbed] });
+            interactionRepliedFlag = true;
+        }
+
         if (tokensLeft >= requiredTokens) {
             return;
         }
@@ -399,7 +429,8 @@ async function pollingMain(client) {
             if (!isGlobalTrackingEnabled()) {
                 console.log('Global tracking is disabled.');
                 return {
-                    abort: 'GLOBAL_TRACKING_DISABLED'
+                    abort: 'GLOBAL_TRACKING_DISABLED',
+                    abortMessage: 'Global tracking is disabled. Please enable global tracking.'
                 }
             }
             let allBrandsData = getAllTrackedBrands();
@@ -408,7 +439,8 @@ async function pollingMain(client) {
             if (brandsNameData.length === 0) {
                 console.log('No brands to process.');
                 return {
-                    abort: 'NO_BRANDS'
+                    abort: 'NO_BRANDS',
+                    abortMessage: 'No brands to process. Please add brands to track.'
                 }
             }
 
@@ -418,12 +450,13 @@ async function pollingMain(client) {
                 const brand = brandsNameData[i];
                 console.log(`Processing ${brand}...`);
 
-                const tokensWait = await waitForTokens(brand);
+                const tokensWait = await waitForTokens(brand, brandsNameData.length);
 
-                if (tokensWait?.abortAll) {
+                if (tokensWait?.abort) {
                     console.log('Aborting all brands processing.');
                     return {
-                        abort: tokensWait.abortAll
+                        abort: tokensWait.abort,
+                        abortMessage: tokensWait.abortMessage
                     }
                 }
 

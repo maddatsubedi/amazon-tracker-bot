@@ -43,16 +43,16 @@ function calculatePriceChange(currentPrice, avgDay, avgWeek, avgMonth) {
 }
 
 const analyzeDeal = (processedDeal) => {
-    if (!deal?.asin) {
+    if (!processedDeal?.asin) {
         return ERROR;
     }
 
-    if(deal.availabePriceTypes.length === 0) {
+    if(processedDeal.availabePriceTypes.length === 0) {
         return ERROR;
     }
 
-    for(const priceType of deal.availabePriceTypes) {
-        let accesorDeal = deal[priceTypesAccesor[priceType]]
+    for(const priceType of processedDeal.availabePriceTypes) {
+        let accesorDeal = processedDeal[priceTypesAccesor[priceType]]
         if(accesorDeal) {
             let priceChange = calculatePriceChange(accesorDeal.currentPrice, accesorDeal.avgDay, accesorDeal.avgWeek, accesorDeal.avgMonth);
             if(priceChange.dealAssessment === FAKE_DEAL || priceChange.dealAssessment === PRICE_ERROR) {

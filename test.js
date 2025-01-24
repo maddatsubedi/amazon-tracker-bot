@@ -1,3 +1,6 @@
-const regex = /^button_role:(\d+)$/;
+const func = (a, b) => {
+    console.log(a);
+    console.log(b);
+};
 
-console.log(regex.test('button_role:2')); // true
+func(1);

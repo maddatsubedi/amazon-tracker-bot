@@ -53,7 +53,7 @@ const getDealMessage = async (deal, roleId, dealAnalysis) => {
         .setFooter({ text: 'Sniper Resell' })
         .setImage(`attachment://${productGraphAttachment?.name}`)
         .setTitle(`Nouveau Deal  :  ${flagEmojis.join(' ')}`)
-        .setDescription(`**[${deal.title}](https://www.amazon.fr/dp/${deal.asin})**\n\n\`\`\`${dealAnalysis}\`\`\``)
+        .setDescription(`**[${deal.title}](https://www.amazon.fr/dp/${deal.asin})**`)
         .addFields(
             { name: 'Prix actuel', value: `> **${currentPrice}**` },
             { name: 'Ancien prix', value: `> **${previousPriceDay}**` },

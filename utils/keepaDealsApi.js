@@ -411,6 +411,7 @@ async function pollingMain(client, interaction) {
         }
 
         if (tokensLeft >= requiredTokens) {
+            console.log(`Tokens Refilled, Brand: ${brand}`);
             return;
         }
 
@@ -493,10 +494,12 @@ async function pollingMain(client, interaction) {
                     if (refillTimeInMs < waitInterval) {
                         console.log(`Not enough tokens for notifications, Brand: ${brand}, Refill Time: ${refillTime} [${refillTimeInMs}ms], Fallback: ${tokensWaitFallbackInterval}ms`);
                         await new Promise(resolve => setTimeout(resolve, (refillTimeInMs + tokensWaitFallbackInterval)));
+                        console.log(`Tokens refilled, Brand: ${brand}`);
                     } else {
                         const refillTime = formatTime(waitInterval);
                         console.log(`Not enough tokens for notifications, Brand: ${brand}, Refill Time: ${refillTime} [${waitInterval}ms], DEFAULT_WAIT`);
                         await new Promise(resolve => setTimeout(resolve, waitInterval));
+                        console.log(`Tokens refilled, Brand: ${brand}`);
                     }
                 }
 

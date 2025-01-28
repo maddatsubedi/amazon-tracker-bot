@@ -16,7 +16,7 @@ const notify = async (client, deal) => {
         const processedDeal = processDealData(deal);
 
         const dealAnalysis = analyzeDeal(processedDeal);
-        
+
         // if(dealAnalysis == FAKE_DEAL){
         //     return {
         //         error: true,
@@ -81,10 +81,19 @@ const notify = async (client, deal) => {
             }
         }
 
+        if (!dealMessage.message) {
+            return {
+                error: true,
+                errorType: 'NO_MESSAGE_CREATED'
+            }
+        }
+
         if (Date.now() - lastRequestTime < RATE_LIMIT_INTERVAL && started) {
             await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_INTERVAL));
         }
-        await channel.send(dealMessage);
+        // TEST_CODE
+        const sentMessage = await channel.send(dealMessage.message);
+        await sentMessage.reply(`\`\`\`For testing purposes:\n\`\`\`\`\`\`json\n${dealMessage.dealString}\`\`\``);
         // console.log(`Deal Notified: ${processedDeal.title}`);
         lastRequestTime = Date.now();
         started = true;

@@ -61,10 +61,16 @@ const getDealMessage = async (deal, roleId, dealAnalysis) => {
 
 
 
+    // TEST_CODE
     const test = checkDealEffectiveness(deal.availableDropDays, deal.availabeDropWeeks, deal.availableDropMonths);
 
-    const test_string = `\n\`\`\`For testing purposes:\n\n${test ? `Average[D,W,M]: [${Number.isInteger(test.averageDropDays) ? test.averageDropDays : test.averageDropDays.toFixed(2)}, ${Number.isInteger(test.averageDropWeeks) ? test.averageDropWeeks : test.averageDropWeeks.toFixed(2)}, ${Number.isInteger(test.averageDropMonths) ? test.averageDropMonths : test.averageDropMonths.toFixed(2)}]` : `Test`}`
+    const test_string = `\`\`\`json\n${test ? `Average[D,W,M]: [${Number.isInteger(test.averageDropDays) ? test.averageDropDays : test.averageDropDays.toFixed(2)}, ${Number.isInteger(test.averageDropWeeks) ? test.averageDropWeeks : test.averageDropWeeks.toFixed(2)}, ${Number.isInteger(test.averageDropMonths) ? test.averageDropMonths : test.averageDropMonths.toFixed(2)}]` : `Test`}`
     + `\nDays: ${JSON.stringify(deal.availableDropDays)}\nWeeks: ${JSON.stringify(deal.availabeDropWeeks)}\nMonths: ${JSON.stringify(deal.availableDropMonths)}\`\`\``;
+
+    const {asin, title, image, categories, rootCat, brand, dealOf, productUrls, ...rest} = deal;
+
+    const dealString = JSON.stringify(rest, null, 4);
+
 
 
 
@@ -122,7 +128,11 @@ const getDealMessage = async (deal, roleId, dealAnalysis) => {
     //     console.log(deal);
     // }
 
-    return message;
+    // TEST_CODE
+    return {
+        message,
+        dealString
+    };
 }
 
 module.exports = {

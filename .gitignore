@@ -12,6 +12,9 @@
 /.env
 /config.json
 
+# zip
+/.zip
+
 # production
 /build
 

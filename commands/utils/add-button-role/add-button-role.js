@@ -7,18 +7,13 @@ module.exports = {
         .setName('add-button-role')
         .setDescription('Add Button Role to the message')
         .addStringOption(option =>
-            option.setName('message_id')
-                .setDescription('Message ID to add the button role')
+            option.setName('message_link')
+                .setDescription('Message link to add the button role')
                 .setRequired(true))
         .addRoleOption(option =>
             option.setName('role')
                 .setDescription('Role to add')
-                .setRequired(true))
-        .addChannelOption(option =>
-            option.setName('channel')
-                .setDescription('Channel where the message is')
-                .setRequired(true)
-                .addChannelTypes(ChannelType.GuildText)),
+                .setRequired(true)),
     isAdmin: true,
     async execute(interaction) {
 
@@ -26,13 +21,47 @@ module.exports = {
 
             await interaction.deferReply();
 
-            const messageID = interaction.options.getString('message_id');
+            const messageLink = interaction.options.getString('message_link');
             const role = interaction.options.getRole('role');
-            const channel = interaction.options.getChannel('channel');
 
-            const message = await channel.messages.fetch(messageID).catch(() => {
-                return null;
-            });
+            const validLinkRegex = /^https:\/\/(?:www\.)?discord\.com\/channels\/(\d+)\/(\d+)\/(\d+)/;
+            const match = messageLink.match(validLinkRegex);
+
+            if (!match) {
+                const errorEmbed = simpleEmbed({
+                    description: `**Invalid message link format**`,
+                    color: 'Red',
+                });
+                return await interaction.editReply({ embeds: [errorEmbed] });
+            }
+
+            const [_, linkGuildId, channelId, messageId] = match;
+
+            if (linkGuildId !== interaction.guildId) {
+                const errorEmbed = simpleEmbed({
+                    description: `**Message link must be from this server**`,
+                    color: 'Red',
+                });
+                return await interaction.editReply({ embeds: [errorEmbed] });
+            }
+
+            const channel = await interaction.guild.channels.fetch(channelId).catch(() => null);
+            if (!channel || channel.type !== ChannelType.GuildText) {
+                const errorEmbed = simpleEmbed({
+                    description: `**Invalid text channel in message link**`,
+                    color: 'Red',
+                });
+                return await interaction.editReply({ embeds: [errorEmbed] });
+            }
+
+            const message = await channel.messages.fetch(messageId).catch(() => null);
+            if (!message) {
+                const errorEmbed = simpleEmbed({
+                    description: `**Message not found in <#${channel.id}>**`,
+                    color: 'Red',
+                });
+                return await interaction.editReply({ embeds: [errorEmbed] });
+            }
 
             if (!message) {
                 const errorEmbed = simpleEmbed({

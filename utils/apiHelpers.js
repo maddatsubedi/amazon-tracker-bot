@@ -10,7 +10,7 @@ const FAKE_DEAL = 'Fake';
 const ERROR = 'System Error';
 
 function calculatePriceChange(currentPrice, avgDay, avgWeek, avgMonth) {
-    
+
     function percentageChange(newPrice, oldPrice) {
         if (oldPrice === 0) {
             return null; // Avoid division by zero
@@ -21,10 +21,10 @@ function calculatePriceChange(currentPrice, avgDay, avgWeek, avgMonth) {
     function assessDeal(currentPrice, probablePrice) {
         if (currentPrice < probablePrice * 0.95) {
             return GOOD_DEAL;
-        } else if(currentPrice < probablePrice * 0.2) {
+        } else if (currentPrice < probablePrice * 0.2) {
             return PRICE_ERROR;
         }
-        else{
+        else {
             return FAKE_DEAL;
         }
     }
@@ -47,15 +47,15 @@ const analyzeDeal = (processedDeal) => {
         return ERROR;
     }
 
-    if(processedDeal.availabePriceTypes.length === 0) {
+    if (processedDeal.availabePriceTypes.length === 0) {
         return ERROR;
     }
 
-    for(const priceType of processedDeal.availabePriceTypes) {
+    for (const priceType of processedDeal.availabePriceTypes) {
         let accesorDeal = processedDeal[priceTypesAccesor[priceType]]
-        if(accesorDeal) {
+        if (accesorDeal) {
             let priceChange = calculatePriceChange(accesorDeal.currentPrice, accesorDeal.avgDay, accesorDeal.avgWeek, accesorDeal.avgMonth);
-            if(priceChange.dealAssessment === FAKE_DEAL || priceChange.dealAssessment === PRICE_ERROR) {
+            if (priceChange.dealAssessment === FAKE_DEAL || priceChange.dealAssessment === PRICE_ERROR) {
                 return priceChange.dealAssessment;
             }
         }
@@ -135,25 +135,31 @@ const processDealData = (deal) => {
 }
 
 const getTokensData = async () => {
-    const url = `https://api.keepa.com/query?key=${keepaAPIKey}`;
-    const response = await fetch(url);
+    try {
+        const url = `https://api.keepa.com/query?key=${keepaAPIKey}`;
+        const response = await fetch(url);
 
-    const data = await response?.json();
+        const data = await response?.json();
 
-    if (!data || !data.timestamp) {
+        if (!data || !data.timestamp) {
+            return {
+                error: 'API_ERROR',
+            }
+        }
+
+        const tokensLeft = data.tokensLeft;
+        const refillIn = data.refillIn;
+        const refillRate = data.refillRate;
+
+        return {
+            tokensLeft,
+            refillIn,
+            refillRate,
+        }
+    } catch (error) {
         return {
             error: 'API_ERROR',
         }
-    }
-
-    const tokensLeft = data.tokensLeft;
-    const refillIn = data.refillIn;
-    const refillRate = data.refillRate;
-
-    return {
-        tokensLeft,
-        refillIn,
-        refillRate,
     }
 }
 

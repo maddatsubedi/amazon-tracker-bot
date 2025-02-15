@@ -62,14 +62,14 @@ const getDealMessage = async (deal, roleId, dealAnalysis) => {
 
 
     // TEST_CODE
-    const test = checkDealEffectiveness(deal.availableDropDays, deal.availabeDropWeeks, deal.availableDropMonths);
+    // const test = checkDealEffectiveness(deal.availableDropDays, deal.availabeDropWeeks, deal.availableDropMonths);
 
-    const test_string = `\`\`\`json\n${test ? `Average[D,W,M]: [${Number.isInteger(test.averageDropDays) ? test.averageDropDays : test.averageDropDays.toFixed(2)}, ${Number.isInteger(test.averageDropWeeks) ? test.averageDropWeeks : test.averageDropWeeks.toFixed(2)}, ${Number.isInteger(test.averageDropMonths) ? test.averageDropMonths : test.averageDropMonths.toFixed(2)}]` : `Test`}`
-    + `\nDays: ${JSON.stringify(deal.availableDropDays)}\nWeeks: ${JSON.stringify(deal.availabeDropWeeks)}\nMonths: ${JSON.stringify(deal.availableDropMonths)}\`\`\``;
+    // const test_string = `\`\`\`json\n${test ? `Average[D,W,M]: [${Number.isInteger(test.averageDropDays) ? test.averageDropDays : test.averageDropDays.toFixed(2)}, ${Number.isInteger(test.averageDropWeeks) ? test.averageDropWeeks : test.averageDropWeeks.toFixed(2)}, ${Number.isInteger(test.averageDropMonths) ? test.averageDropMonths : test.averageDropMonths.toFixed(2)}]` : `Test`}`
+    // + `\nDays: ${JSON.stringify(deal.availableDropDays)}\nWeeks: ${JSON.stringify(deal.availabeDropWeeks)}\nMonths: ${JSON.stringify(deal.availableDropMonths)}\`\`\``;
 
-    const {asin, title, image, categories, rootCat, brand, dealOf, productUrls, ...rest} = deal;
+    // const {asin, title, image, categories, rootCat, brand, dealOf, productUrls, ...rest} = deal;
 
-    const dealString = JSON.stringify(rest, null, 4);
+    // const dealString = JSON.stringify(rest, null, 4);
 
 
 
@@ -81,7 +81,7 @@ const getDealMessage = async (deal, roleId, dealAnalysis) => {
         .setFooter({ text: 'Sniper Resell' })
         .setImage(`attachment://${productGraphAttachment?.name}`)
         .setTitle(`Nouveau Deal  :  ${flagEmojis.join(' ')}`)
-        .setDescription(`**[${deal.title}](https://www.amazon.fr/dp/${deal.asin})**\n${test_string}`)
+        .setDescription(`**[${deal.title}](https://www.amazon.fr/dp/${deal.asin})**`)
         .addFields(
             { name: 'Prix actuel', value: `> **${currentPrice}**` },
             { name: 'Ancien prix', value: `> **${previousPriceDay}**` },
@@ -131,7 +131,7 @@ const getDealMessage = async (deal, roleId, dealAnalysis) => {
     // TEST_CODE
     return {
         message,
-        dealString
+        // dealString
     };
 }
 

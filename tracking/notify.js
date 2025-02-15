@@ -93,7 +93,7 @@ const notify = async (client, deal) => {
         }
         // TEST_CODE
         const sentMessage = await channel.send(dealMessage.message);
-        await sentMessage.reply(`\`\`\`For testing purposes:\n\`\`\`\`\`\`json\n${dealMessage.dealString}\`\`\``);
+        // await sentMessage.reply(`\`\`\`For testing purposes:\n\`\`\`\`\`\`json\n${dealMessage.dealString}\`\`\``);
         // console.log(`Deal Notified: ${processedDeal.title}`);
         lastRequestTime = Date.now();
         started = true;

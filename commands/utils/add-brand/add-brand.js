@@ -1,10 +1,8 @@
-const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder, PermissionsBitField, ChannelType, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, ChannelType } = require('discord.js');
 const { simpleEmbed, localesEmbed } = require('../../../embeds/generalEmbeds');
-const { validateRange, isValidASIN, getDomainIDByLocale, generateRandomHexColor, validateAvailableLocales, validateLowerCase } = require('../../../utils/helpers');
-const { domain } = require('../../../utils/keepa.json');
-const { getAllBrands, brandExists, insertBrand, getAllTrackedBrands } = require('../../../database/models/asins');
-const { isPolling } = require('../../../database/models/config');
-const { initPolling, reInitPolling } = require('../../../tracking/polling');
+const {  validateAvailableLocales, validateLowerCase } = require('../../../utils/helpers');
+const { brandExists, insertBrand, getAllTrackedBrands } = require('../../../database/models/asins');
+const { reInitPolling } = require('../../../tracking/polling');
 
 module.exports = {
     data: new SlashCommandBuilder()

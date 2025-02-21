@@ -10,48 +10,40 @@ const createPriceRangeTable = () => {
 };
 
 const setRange = (range, roleID) => {
-    createPriceRangeTable();
     db.prepare(`
         INSERT INTO discount_range (range, roleID) VALUES (?, ?)
     `).run(range, roleID);
 };
 
 const updateRange = (range, roleID) => {
-    createPriceRangeTable();
     db.prepare(`
         UPDATE discount_range SET roleID = ? WHERE range = ?
     `).run(roleID, range);
 };
 
 const getRangeDetails = (range) => {
-    createPriceRangeTable();
     const row = db.prepare('SELECT roleID FROM discount_range WHERE range = ?').get(range);
     return row || null;
 };
 
 const getAllRanges = () => {
-    createPriceRangeTable();
     return db.prepare('SELECT * FROM discount_range').all();
 };
 
 const deleteRange = (range) => {
-    createPriceRangeTable();
     const result = db.prepare('DELETE FROM discount_range WHERE range = ?').run(range);
     return result.changes > 0;
 };
 
 const resetRanges = () => {
-    createPriceRangeTable();
     db.prepare('DELETE FROM discount_range').run();
 };
 
 const getRange = (range) => {
-    createPriceRangeTable();
     return db.prepare('SELECT * FROM discount_range WHERE range = ?').get(range);
 };
 
 const getRangeForDiscount = (discount) => {
-    createPriceRangeTable();
     const discountRanges = db.prepare('SELECT * FROM discount_range').all();
 
     const range = discountRanges.find(range => {
@@ -63,6 +55,7 @@ const getRangeForDiscount = (discount) => {
 };
 
 module.exports = {
+    createPriceRangeTable,
     setRange,
     updateRange,
     getRangeDetails,

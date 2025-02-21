@@ -1,11 +1,13 @@
-const { setupRolesDB, removeExpiredRoles } = require("../database/models/roles");
+const { removeExpiredRoles } = require("../database/models/subscription");
 const { initPolling } = require("../tracking/polling");
-const { runExpiredRolesRemoval } = require("./discordUtils");
+const { runExpiredSubscriptionsRemoval } = require("./discordUtils");
+const { dbSetup } = require("./dbSetup");
 
 const setupBotInit = async (client) => {
-    
+
+    dbSetup();
     initPolling(client);
-    runExpiredRolesRemoval(client);
+    runExpiredSubscriptionsRemoval(client);
 
 };
 

@@ -31,7 +31,7 @@ const createAsinsTable = () => {
   ).run();
 };
 
-const initializeDatabase = () => {
+const initializeBrandsAndAsins = () => {
   createBrandsTable();
   createAsinsTable();
 
@@ -266,7 +266,7 @@ module.exports = {
   brandExists,
   deleteBrandAndAsins,
   getBrandDomains,
-  initializeDatabase,
+  initializeBrandsAndAsins,
   getAllTrackedBrands,
   getBrandFromName,
   insertSingleAsin,

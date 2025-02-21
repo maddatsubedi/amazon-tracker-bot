@@ -310,6 +310,28 @@ const validateLowerCase = (string) => {
     return string === string.toLowerCase();
 }
 
+function parseDuration(durationStr) {
+    const regex = /^(\d+)\s*(sec|min|hr|day|wk|mo)$/i;
+    const match = durationStr.match(regex);
+    if (!match) return null;
+    
+    const amount = parseInt(match[1], 10);
+    const unit = match[2].toLowerCase();
+    
+    let multiplier;
+    switch (unit) {
+        case 'sec': multiplier = 1000; break;
+        case 'min': multiplier = 60 * 1000; break;
+        case 'hr': multiplier = 60 * 60 * 1000; break;
+        case 'day': multiplier = 24 * 60 * 60 * 1000; break;
+        case 'wk': multiplier = 7 * 24 * 60 * 60 * 1000; break;
+        case 'mo': multiplier = 30 * 24 * 60 * 60 * 1000; break;
+        default: return null;
+    }
+
+    return amount * multiplier;
+}
+
 module.exports = {
     checkRole,
     checkRolesFromList,
@@ -335,5 +357,6 @@ module.exports = {
     getDealImage,
     parseTimeToMilliseconds,
     validateLowerCase,
-    formatTime
+    formatTime,
+    parseDuration
 };

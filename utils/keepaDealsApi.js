@@ -1,4 +1,4 @@
-const { getBrandDomains, initializeDatabase, getAllBrands, getAllTrackedBrands } = require("../database/models/asins");
+const { getBrandDomains, initializeBrandsAndAsins, getAllBrands, getAllTrackedBrands } = require("../database/models/asins");
 const { getKeepaTimeMinutes, getDomainIDs, formatPrice, formatKeepaDate, getDomainLocaleByDomainID, getRefillTime, calculateTokensRefillTime, parseTimeToMilliseconds, formatTime } = require("./helpers");
 const { keepaAPIKey } = require('../config.json');
 const { priceTypesMap } = require('./keepa.json');
@@ -340,10 +340,10 @@ const brandPollingInterval = 2500; // 2.5 seconds
 const cycleInterval = 60000; // 1 minute
 let pollingStarted = false;
 
-function setupPolling() {
-    initializeDatabase();
-    setupGlobalTracking()
-}
+// function setupPolling() {
+//     initializeBrandsAndAsins();
+//     setupGlobalTracking()
+// }
 
 const hasEnoughTokens = (brand) => {
     const requiredTokens = brandTokensRequirements[brand] || defaultTokensRequirements;
@@ -536,6 +536,6 @@ async function pollingMain(client, interaction) {
 }
 
 module.exports = {
-    setupPolling,
+    // setupPolling,
     pollingMain
 }

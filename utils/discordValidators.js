@@ -2,9 +2,11 @@ const { checkRole } = require('../utils/helpers');
 const { getConfig } = require('../database/models/config');
 const { simpleEmbed } = require('../embeds/generalEmbeds');
 const { guildId } = require('../config.json');
+const { getGuildConfig } = require('../database/models/guildConfig');
 
 const validateAdmin = async (interaction) => {
-    const adminRoleID = getConfig('adminRoleID');
+    const guildId = interaction.guild.id;
+    const adminRoleID = getGuildConfig(guildId, 'adminRoleID');
     const errorEmbed = simpleEmbed({ description: '⚠️ \u200b You do not have permission to run this command', color: 'Red' });
     const command = interaction.client.commands.get(interaction.commandName);
 
@@ -18,7 +20,8 @@ const validateAdmin = async (interaction) => {
 
 const validateGuild = async (interaction) => {
     const errorEmbed = simpleEmbed({ description: '⚠️ \u200b You cannot use this bot in this server', color: 'Red' });
-    if (interaction.guildId !== guildId) {
+    const command = interaction.client.commands.get(interaction.commandName);
+    if (interaction.guildId !== guildId && !command.otherGuilds?.includes(interaction.guildId)) {
         return {
             error: true,
             embed: errorEmbed

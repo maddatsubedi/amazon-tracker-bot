@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType } = require('discord.js');
 const { simpleEmbed } = require('../../../embeds/generalEmbeds');
-const { getAllBrands } = require('../../../database/models/asins');
+const { otherGuilds1 } = require('../../../config.json');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -15,11 +15,19 @@ module.exports = {
                 .setDescription('Role to add')
                 .setRequired(true)),
     isAdmin: true,
+    otherGuilds: otherGuilds1,
     async execute(interaction) {
 
         try {
 
             await interaction.deferReply();
+
+            const maintenanceEmbed = simpleEmbed({
+                description: `**This command is temporarily disabled for maintenance**`,
+                color: 'Red',
+            })
+
+            return await interaction.editReply({ embeds: [maintenanceEmbed] });
 
             const messageLink = interaction.options.getString('message_link');
             const role = interaction.options.getRole('role');

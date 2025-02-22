@@ -1,10 +1,8 @@
-const { Events } = require('discord.js');
-const fs = require('node:fs');
-const path = require('node:path');
-const { checkRole } = require('../../utils/helpers');
-const { getConfig } = require('../../database/models/config');
+const { Events, MessageFlags } = require('discord.js');
 const { simpleEmbed } = require('../../embeds/generalEmbeds');
-const { validateAdminAndGuild } = require('../../utils/discordValidators');
+const { getGuildConfig } = require('../../database/models/guildConfig');
+const { getSubscriptionRoles } = require('../../database/models/subscriptionRoles');
+const { getSubscription } = require('../../database/models/subscription');
 
 module.exports = {
 	name: Events.InteractionCreate,
@@ -15,6 +13,7 @@ module.exports = {
 		}
 
 		const customId = interaction.customId;
+		const guildId = interaction.guild.id;
 
 		const regex = /^button_role:(\d+)$/;
 
@@ -24,6 +23,17 @@ module.exports = {
 
 		const roleId = customId.split(':')[1];
 
+		const premiumRoleId = await getGuildConfig(guildId, 'premium_role_id');
+		const subscriptionRoles = getSubscriptionRoles(guildId);
+
+		if (!premiumRoleId) {
+			const errorEmbed = simpleEmbed({
+				description: `**Premium Role not set**\n\n> Please contact support`,
+				color: 'Red',
+			});
+			return await interaction.reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral });
+		}
+
 		const role = await interaction.guild.roles.cache.get(roleId);
 
 		if (!role) {
@@ -31,7 +41,7 @@ module.exports = {
 				description: `**Role not found**\n\n> Please contact support`,
 				color: 'Red',
 			});
-			return await interaction.reply({ embeds: [errorEmbed], ephemeral: true });
+			return await interaction.reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral });
 		}
 
 		const member = await interaction.member;
@@ -47,7 +57,7 @@ module.exports = {
 					color: 'Red',
 				});
 				flag = true;
-				return interaction.reply({ embeds: [errorEmbed], ephemeral: true });
+				return interaction.reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral });
 			});
 
 			if (flag) {
@@ -56,9 +66,20 @@ module.exports = {
 
 			const embed = simpleEmbed({
 				description: `**Role removed: <@&${role.id}>**`,
-				color: 'Green',
+				color: 'Orange',
 			});
-			return await interaction.reply({ embeds: [embed], ephemeral: true });
+			return await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+		}
+
+		const isSubscriptionRole = subscriptionRoles.some((role) => role.role_id === roleId);
+		const userSubscription = getSubscription(member.id, guildId);
+
+		if (isSubscriptionRole && !userSubscription) {
+			const errorEmbed = simpleEmbed({
+				description: `**You do not have an active subscription**\n\n> This role: <@&${role.id}> is only available for premium users`,
+				color: 'Red',
+			});
+			return await interaction.reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral });
 		}
 
 		await member.roles.add(roleId).catch(() => {
@@ -67,7 +88,7 @@ module.exports = {
 				color: 'Red',
 			});
 			flag = true;
-			return interaction.reply({ embeds: [errorEmbed], ephemeral: true });
+			return interaction.reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral });
 		});
 
 		if (flag) {
@@ -78,6 +99,6 @@ module.exports = {
 			description: `**Role added: <@&${role.id}>**`,
 			color: 'Green',
 		});
-		return await interaction.reply({ embeds: [embed], ephemeral: true });
+		return await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 	},
 };

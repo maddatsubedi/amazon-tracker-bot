@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, PermissionsBitField, ChannelType, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { simpleEmbed } = require('../../../embeds/generalEmbeds');
 const { setRange, getRangeDetails } = require('../../../database/models/discount_range');
 const { validateRange } = require('../../../utils/helpers');

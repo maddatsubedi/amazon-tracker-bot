@@ -1,9 +1,8 @@
-const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder, PermissionsBitField, ChannelType, PermissionFlagsBits } = require('discord.js');
-const { simpleEmbed, localesEmbed } = require('../../../embeds/generalEmbeds');
-const { validateRange, isValidASIN, getDomainIDByLocale, generateRandomHexColor, validateAvailableLocales, calculateTokensRefillTime } = require('../../../utils/helpers');
-const { domain } = require('../../../utils/keepa.json');
-const { getProductDetails, getProductGraphBuffer, addProducts } = require('../../../utils/keepaProductApi');
-const { getAllBrands, brandExists } = require('../../../database/models/asins');
+const { SlashCommandBuilder } = require('discord.js');
+const { simpleEmbed } = require('../../../embeds/generalEmbeds');
+const { calculateTokensRefillTime } = require('../../../utils/helpers');
+const { addProducts } = require('../../../utils/keepaProductApi');
+const { brandExists } = require('../../../database/models/asins');
 
 let isAddingProducts = false;
 

@@ -1,5 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType } = require('discord.js');
 const { simpleEmbed } = require('../../../embeds/generalEmbeds');
+const { otherGuilds1 } = require('../../../config.json');
+const { generateRandomHexColor } = require('../../../utils/helpers');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -13,22 +15,35 @@ module.exports = {
             option.setName('channel')
                 .setDescription('Channel to send the message')
                 .setRequired(true)
-                .addChannelTypes(ChannelType.GuildText)),
+                .addChannelTypes(ChannelType.GuildText))
+        .addStringOption(option =>
+            option.setName('format')
+                .setDescription('Formatting option (Default: No Format)')
+                .setRequired(false)
+                .addChoices(
+                    { name: 'Format', value: 'format' },
+                    { name: 'Plain', value: 'plain' },
+                    { name: 'Divide', value: 'divide' }
+                )),
     isAdmin: true,
+    otherGuilds: otherGuilds1,
     async execute(interaction) {
         try {
             await interaction.deferReply();
 
-            // Configuration
+            // Constants
             const MAX_BUTTONS_PER_ROW = 5;
-            const EMBED_COLOR = 'Blue';
-            const EMBED_FOOTER = 'Button Roles';
+            const MAX_ROWS_PER_MESSAGE = 5;
+            const EMBED_COLOR = generateRandomHexColor();
+            const DEFAULT_EMBED_TITLE = 'Role Selection';
+            const EMBED_FOOTER = `${interaction.guild.name} | Roles Selection`;
 
-            // Get command inputs
+            // Get inputs
             const messageLink = interaction.options.getString('template-message-link');
             const sendChannel = interaction.options.getChannel('channel');
+            const formatOption = interaction.options.getString('format') || 'plain';
 
-            // Validate message link format
+            // Validate message link
             const linkMatch = messageLink.match(/^https:\/\/(?:www\.)?discord\.com\/channels\/(\d+)\/(\d+)\/(\d+)/);
             if (!linkMatch) {
                 return interaction.editReply({ embeds: [simpleEmbed({ description: '**Invalid message link format**', color: 'Red' })] });
@@ -40,23 +55,69 @@ module.exports = {
             }
 
             // Fetch template message
-            const templateChannel = await interaction.guild.channels.fetch(channelId);
-            const templateMessage = await templateChannel.messages.fetch(messageId);
+            const templateChannel = await interaction.guild.channels.fetch(channelId).catch(() => null);
+            if (!templateChannel || templateChannel.type !== ChannelType.GuildText) {
+                return interaction.editReply({ embeds: [simpleEmbed({ description: '**Invalid template channel**', color: 'Red' })] });
+            }
 
-            // Parse categories from template
-            const categories = [];
+            const templateMessage = await templateChannel.messages.fetch(messageId).catch(() => null);
+            if (!templateMessage) {
+                return interaction.editReply({ embeds: [simpleEmbed({ description: '**Invalid template message**', color: 'Red' })] });
+            }
+
+            // Split message into sections and separate header from categories
+            const sections = templateMessage.content.split('\n\n').map(section => section.trim()).filter(section => section !== '');
+            let headerSections = [];
+            let categorySections = [];
+            let foundFirstCategory = false;
             const roleMentionRegex = /<@&(\d+)>/g;
 
-            templateMessage.content.split('\n\n').forEach(section => {
-                const lines = section.split('\n').filter(l => l.trim());
+            for (const section of sections) {
+                if (foundFirstCategory) {
+                    categorySections.push(section);
+                    continue;
+                }
+
+                const lines = section.split('\n').filter(line => line.trim());
+                if (lines.length < 2) {
+                    headerSections.push(section);
+                    continue;
+                }
+
+                // Check if the section contains role mentions in the role lines (lines after the first)
+                const roleLines = lines.slice(1).join(' ');
+                const hasRoleMentions = roleMentionRegex.test(roleLines);
+                roleMentionRegex.lastIndex = 0; // Reset regex state after test
+
+                if (hasRoleMentions) {
+                    foundFirstCategory = true;
+                    categorySections.push(section);
+                } else {
+                    headerSections.push(section);
+                }
+            }
+
+            // Extract mainTitle and mainDesc from header sections
+            const headerText = headerSections.join('\n\n');
+            const mainTitleMatch = headerText.match(/\((.*?)\)/s);
+            const mainTitle = mainTitleMatch?.[1]?.trim() || null;
+            const mainDescMatch = headerText.match(/\[(.*?)\]/s);
+            const mainDesc = mainDescMatch?.[1]?.trim() || null;
+
+            // Parse categories from category sections
+            const categories = [];
+            categorySections.forEach(section => {
+                const lines = section.split('\n').filter(line => line.trim());
                 if (lines.length < 2) return;
 
                 const [titleLine, ...roleLines] = lines;
-                const [title, ...descriptionParts] = titleLine.split(':').map(p => p.trim());
+                const [title, ...descriptionParts] = titleLine.split(':').map(part => part.trim());
                 const description = descriptionParts.join(': ');
 
                 const roles = [];
-                roleLines.join(' ').match(roleMentionRegex)?.forEach(mention => {
+                const roleText = roleLines.join(' ');
+                const mentions = roleText.match(roleMentionRegex) || [];
+                mentions.forEach(mention => {
                     const roleId = mention.replace(/<@&|>/g, '');
                     const role = interaction.guild.roles.cache.get(roleId);
                     if (role) roles.push(role);
@@ -71,46 +132,118 @@ module.exports = {
                 }
             });
 
-            // Build embed description
-            let embedDescription = '';
-            const allActionRows = [];
-
-            for (const category of categories) {
-                // Add category section to embed
-                embedDescription += `> **${category.title}**\n> ${category.description}\n`;
-                embedDescription += `> • ${category.roles.map(role => `${role.toString()}`).join('\n> • ')}\n\n`;
-
-                // Create buttons for this category
-                const categoryButtons = category.roles.map(role =>
-                    new ButtonBuilder()
-                        .setCustomId(`button_role:${role.id}`)
-                        .setLabel(role.name)
-                        .setStyle(ButtonStyle.Primary)
-                );
-
-                // Split buttons into rows
-                while (categoryButtons.length > 0) {
-                    const rowButtons = categoryButtons.splice(0, MAX_BUTTONS_PER_ROW);
-                    allActionRows.push(new ActionRowBuilder().addComponents(rowButtons));
-                }
+            if (categories.length === 0) {
+                return interaction.editReply({ embeds: [simpleEmbed({ description: '**No valid categories found in template message**', color: 'Red' })] });
             }
 
-            // Create final embed
-            const roleEmbed = new EmbedBuilder()
-                .setColor(EMBED_COLOR)
-                .setDescription(embedDescription.trim())
-                .setFooter({ text: EMBED_FOOTER });
+            // Handle different format options
+            if (formatOption === 'divide') {
+                let totalMessages = 0;
 
-            // Send message with components
-            await sendChannel.send({
-                embeds: [roleEmbed],
-                components: allActionRows
-            });
+                if (mainTitle || mainDesc) {
+                    const firstEmbed = new EmbedBuilder()
+                        .setColor(EMBED_COLOR)
+                        .setTitle(mainTitle || DEFAULT_EMBED_TITLE)
+                        .setDescription(mainDesc || null);
 
-            return interaction.editReply({
-                embeds: [simpleEmbed({ description: `**Button roles message created in ${sendChannel}**`, color: 'Green' })]
-            });
+                    await sendChannel.send({ embeds: [firstEmbed] });
+                    totalMessages++;
+                }
 
+                for (const category of categories) {
+                    let categoryDescription = `> **${category.title}**\n`;
+                    if (category.description.trim() !== '') {
+                        categoryDescription += `> ${category.description}\n\n`;
+                    }
+                    categoryDescription += `> **Roles:**`;
+
+                    const categoryEmbed = new EmbedBuilder()
+                        .setColor(EMBED_COLOR)
+                        .setDescription(categoryDescription);
+
+                    const buttons = category.roles.map(role =>
+                        new ButtonBuilder()
+                            .setCustomId(`button_role:${role.id}`)
+                            .setLabel(role.name)
+                            .setStyle(ButtonStyle.Primary)
+                    );
+
+                    const categoryActionRows = [];
+                    while (buttons.length > 0) {
+                        const rowButtons = buttons.splice(0, MAX_BUTTONS_PER_ROW);
+                        categoryActionRows.push(new ActionRowBuilder().addComponents(rowButtons));
+                    }
+
+                    const rowChunks = [];
+                    while (categoryActionRows.length > 0) {
+                        rowChunks.push(categoryActionRows.splice(0, MAX_ROWS_PER_MESSAGE));
+                    }
+
+                    totalMessages += rowChunks.length;
+
+                    for (const [index, chunk] of rowChunks.entries()) {
+                        const messageContent = index === 0 ? { embeds: [categoryEmbed] } : {};
+                        await sendChannel.send({
+                            ...messageContent,
+                            components: chunk
+                        });
+                    }
+                }
+
+                return interaction.editReply({
+                    embeds: [simpleEmbed({ description: `**Created ${totalMessages} role messages in ${sendChannel}**`, color: 'Green' })]
+                });
+            } else {
+                const roleEmbed = new EmbedBuilder()
+                    .setColor(EMBED_COLOR)
+                    .setFooter({ text: EMBED_FOOTER, iconURL: interaction.guild.iconURL() });
+
+                let embedDescription = mainDesc ? `${mainDesc}\n\n` : '';
+                const allActionRows = [];
+
+                for (const category of categories) {
+                    const description = category.description.trim() ? `> ${category.description.trim()}\n` : '';
+                    embedDescription += `> **${category.title}**\n${description}`;
+                    embedDescription += `> - ${category.roles.map(role => role.toString()).join('\n> - ')}\n\n`;
+
+                    const buttons = category.roles.map(role =>
+                        new ButtonBuilder()
+                            .setCustomId(`button_role:${role.id}`)
+                            .setLabel(role.name)
+                            .setStyle(ButtonStyle.Primary)
+                    );
+
+                    while (buttons.length > 0) {
+                        const rowButtons = buttons.splice(0, MAX_BUTTONS_PER_ROW);
+                        allActionRows.push(new ActionRowBuilder().addComponents(rowButtons));
+                    }
+                }
+
+                if (formatOption === 'format') {
+                    roleEmbed.setTitle(mainTitle || DEFAULT_EMBED_TITLE);
+                    roleEmbed.setDescription(embedDescription.trim());
+                } else {
+                    // roleEmbed.setTitle(DEFAULT_EMBED_TITLE);
+                    roleEmbed.setDescription(templateMessage.content);
+                }
+
+                const componentChunks = [];
+                while (allActionRows.length > 0) {
+                    componentChunks.push(allActionRows.splice(0, MAX_ROWS_PER_MESSAGE));
+                }
+
+                for (const [index, chunk] of componentChunks.entries()) {
+                    const messageContent = index === 0 ? { embeds: [roleEmbed] } : {};
+                    await sendChannel.send({
+                        ...messageContent,
+                        components: chunk
+                    });
+                }
+
+                return interaction.editReply({
+                    embeds: [simpleEmbed({ description: `**Created ${componentChunks.length} role messages in ${sendChannel}**`, color: 'Green' })]
+                });
+            }
         } catch (error) {
             console.error('Create Roles Message Error:', error);
             return interaction.editReply({

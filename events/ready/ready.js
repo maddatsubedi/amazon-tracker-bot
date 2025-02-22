@@ -1,7 +1,6 @@
 const { Events } = require('discord.js');
 const { initPolling } = require('../../tracking/polling');
 const { setIsPolling, unsetIsPolling } = require('../../database/models/config');
-const { setupRolesDB } = require('../../database/models/roles');
 const { setupBotInit } = require('../../utils/setupBotInit');
 
 module.exports = {

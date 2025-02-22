@@ -1,36 +1,45 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { getAllRoles } = require('../../../database/models/roles');
+const moment = require('moment-timezone');
+const { getAllGuildSubscriptions } = require('../../../database/models/subscription');
 const { simpleEmbed } = require('../../../embeds/generalEmbeds');
+const { otherGuilds1 } = require('../../../config.json');
+const { getGuildConfig } = require('../../../database/models/guildConfig');
 
 const ITEMS_PER_PAGE = 5;
 const FIRST_PAGE_ITEMS = 4;
 const SHOW_DESCRIPTION_ON_ALL_PAGES = true;
-const DESCRIPTION = `This is a list of all roles in the system, including their associated users and expiration dates.\n`;
+const DESCRIPTION = `This is a list of all active subscriptions. Use \`/add-subscription\` to add more.\n`;
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('list-roles')
-        .setDescription('List all roles in the system with pagination'),
-
+        .setName('list-subscriptions')
+        .setDescription('List all active role subscriptions'),
+    isAdmin: true,
+    otherGuilds: otherGuilds1,
     async execute(interaction) {
-        const roles = getAllRoles();
+        const guildId = interaction.guild.id;
 
-        if (!roles.length) {
-            const emptyEmbed = simpleEmbed({
-                description: `**No roles are currently configured**\n\n>>> You can roles to users using \`/add-role\``,
+        const subscriptions = getAllGuildSubscriptions(guildId);
+
+        const premiumRoleId = getGuildConfig(guildId, 'premium_role_id');
+
+        try {
+
+        if (subscriptions.length === 0) {
+            const errorEmbed = simpleEmbed({
+                description: `**No active subscriptions**\n\n>>> You can add subscriptions using \`/add-subscription\``,
                 color: 'Yellow',
-                totalPages: 1
             });
-            return await interaction.reply({ embeds: [emptyEmbed] });
+            return await interaction.reply({ embeds: [errorEmbed] });
         }
 
         let currentPage = 0;
-        const totalRoles = roles.length;
-
-        // Total pages calculation adjusted for first page items
+        const totalSubscriptions = subscriptions.length;
         const totalPages = Math.ceil(
-            (totalRoles - FIRST_PAGE_ITEMS) / ITEMS_PER_PAGE + 1
+            (totalSubscriptions - FIRST_PAGE_ITEMS) / ITEMS_PER_PAGE + 1
         );
+
+        const roleDescription = `**Premium Role**: <@&${premiumRoleId}>\n`;
 
         const generateEmbed = (page) => {
             let start, end;
@@ -42,22 +51,26 @@ module.exports = {
                 end = start + ITEMS_PER_PAGE;
             }
 
-            const paginatedRoles = roles.slice(start, end);
+            const paginatedSubscriptions = subscriptions.slice(start, end);
 
             let descriptionContent = '';
-            paginatedRoles.forEach(({ user_id, role_id, added_at, expires_at }) => {
-                descriptionContent += `\n> **User**: <@${user_id}>\n> **Role**: <@&${role_id}>\n> **Added At**: \`${added_at}\`\n> **Expires At**: \`${expires_at}\`\n`;
+            paginatedSubscriptions.forEach(({ user_id, role_id, added_at, expires_at }) => {
+                const addedAtFormatted = moment(added_at).tz('Europe/Rome').format('YYYY-MM-DD HH:mm:ss');
+                const expiresAtFormatted = moment(expires_at).tz('Europe/Rome').format('YYYY-MM-DD HH:mm:ss');
+                const duration = moment.duration(moment(expires_at).diff(moment(added_at))).humanize();
+
+                descriptionContent += `\n> **User**: <@${user_id}>\n> **Added At**: \`${addedAtFormatted}\`\n> **Expires At**: \`${expiresAtFormatted}\`\n> **Duration Set**: \`${duration}\`\n`;
             });
 
             const embed = new EmbedBuilder()
-                .setTitle('Roles List')
+                .setTitle('Active Subscriptions')
                 .setColor('Random')
-                .setFooter({ text: `Total: ${totalRoles}` });
+                .setFooter({ text: `Total: ${totalSubscriptions}` });
 
-            // Add main description only on the first page or based on the flag
             if (page === 0 || SHOW_DESCRIPTION_ON_ALL_PAGES) {
-                embed.setDescription(DESCRIPTION + descriptionContent);
+                embed.setDescription(DESCRIPTION + roleDescription + descriptionContent);
             } else {
+                // embed.setDescription(roleDescription + descriptionContent);
                 embed.setDescription(descriptionContent);
             }
 
@@ -97,7 +110,7 @@ module.exports = {
 
         const collector = message.createMessageComponentCollector({
             filter: (btnInteraction) => btnInteraction.user.id === interaction.user.id,
-            time: 60000, // Collector timeout: 1 minute
+            time: 60000,
         });
 
         collector.on('collect', async (btnInteraction) => {
@@ -117,7 +130,16 @@ module.exports = {
         });
 
         collector.on('end', () => {
-            message.edit({ components: [] }); // Remove buttons after timeout
+            message.edit({ components: [] });
         });
+
+        } catch (error) {
+            console.error(error);
+            const errorEmbed = simpleEmbed({
+                description: `**An error occurred. Please try again later**`,
+                color: 'Red',
+            });
+            return await interaction.reply({ embeds: [errorEmbed] });
+        }
     },
 };

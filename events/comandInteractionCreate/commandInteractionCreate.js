@@ -5,6 +5,7 @@ const { checkRole } = require('../../utils/helpers');
 const { getConfig } = require('../../database/models/config');
 const { simpleEmbed } = require('../../embeds/generalEmbeds');
 const { validateAdminAndGuild } = require('../../utils/discordValidators');
+const { otherGuilds1 } = require('../../config.json');
 
 module.exports = {
 	name: Events.InteractionCreate,
@@ -25,7 +26,7 @@ module.exports = {
 		const validate = await validateAdminAndGuild(interaction);
 		if (validate && validate.error) {
 			if (validate.embed) {
-				return await interaction.reply({embeds: [validate.embed]});
+				return await interaction.reply({ embeds: [validate.embed] });
 			}
 			return;
 		}

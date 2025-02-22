@@ -36,7 +36,7 @@ module.exports = {
             const MAX_ROWS_PER_MESSAGE = 5;
             const EMBED_COLOR = generateRandomHexColor();
             const DEFAULT_EMBED_TITLE = 'Role Selection';
-            const EMBED_FOOTER = `${interaction.guild.name} | Roles`;
+            const EMBED_FOOTER = `${interaction.guild.name} | Roles Selection`;
 
             // Get inputs
             const messageLink = interaction.options.getString('template-message-link');
@@ -65,30 +65,59 @@ module.exports = {
                 return interaction.editReply({ embeds: [simpleEmbed({ description: '**Invalid template message**', color: 'Red' })] });
             }
 
-            const messageContent = templateMessage.content.trim();
-
-            // Extract main title from template message: (Main Title)
-            const mainTitleMatch = messageContent.match(/\((.*?)\)/s);
-            const mainTitle = mainTitleMatch?.[1].trim();
-
-            // Extract main description from template message
-            const mainDescMatch = messageContent.match(/\[(.*?)\]/s);
-            const mainDesc = mainDescMatch?.[1].trim();
-
-            // Parse categories
-            const categories = [];
+            // Split message into sections and separate header from categories
+            const sections = templateMessage.content.split('\n\n').map(section => section.trim()).filter(section => section !== '');
+            let headerSections = [];
+            let categorySections = [];
+            let foundFirstCategory = false;
             const roleMentionRegex = /<@&(\d+)>/g;
 
-            templateMessage.content.split('\n\n').forEach(section => {
-                const lines = section.split('\n').filter(l => l.trim());
+            for (const section of sections) {
+                if (foundFirstCategory) {
+                    categorySections.push(section);
+                    continue;
+                }
+
+                const lines = section.split('\n').filter(line => line.trim());
+                if (lines.length < 2) {
+                    headerSections.push(section);
+                    continue;
+                }
+
+                // Check if the section contains role mentions in the role lines (lines after the first)
+                const roleLines = lines.slice(1).join(' ');
+                const hasRoleMentions = roleMentionRegex.test(roleLines);
+                roleMentionRegex.lastIndex = 0; // Reset regex state after test
+
+                if (hasRoleMentions) {
+                    foundFirstCategory = true;
+                    categorySections.push(section);
+                } else {
+                    headerSections.push(section);
+                }
+            }
+
+            // Extract mainTitle and mainDesc from header sections
+            const headerText = headerSections.join('\n\n');
+            const mainTitleMatch = headerText.match(/\((.*?)\)/s);
+            const mainTitle = mainTitleMatch?.[1]?.trim() || null;
+            const mainDescMatch = headerText.match(/\[(.*?)\]/s);
+            const mainDesc = mainDescMatch?.[1]?.trim() || null;
+
+            // Parse categories from category sections
+            const categories = [];
+            categorySections.forEach(section => {
+                const lines = section.split('\n').filter(line => line.trim());
                 if (lines.length < 2) return;
 
                 const [titleLine, ...roleLines] = lines;
-                const [title, ...descriptionParts] = titleLine.split(':').map(p => p.trim());
+                const [title, ...descriptionParts] = titleLine.split(':').map(part => part.trim());
                 const description = descriptionParts.join(': ');
 
                 const roles = [];
-                roleLines.join(' ').match(roleMentionRegex)?.forEach(mention => {
+                const roleText = roleLines.join(' ');
+                const mentions = roleText.match(roleMentionRegex) || [];
+                mentions.forEach(mention => {
                     const roleId = mention.replace(/<@&|>/g, '');
                     const role = interaction.guild.roles.cache.get(roleId);
                     if (role) roles.push(role);
@@ -112,33 +141,26 @@ module.exports = {
                 let totalMessages = 0;
 
                 if (mainTitle || mainDesc) {
-
                     const firstEmbed = new EmbedBuilder()
                         .setColor(EMBED_COLOR)
-
-                    mainTitle && firstEmbed.setTitle(mainTitle);
-                    mainDesc && firstEmbed.setDescription(mainDesc);
+                        .setTitle(mainTitle || DEFAULT_EMBED_TITLE)
+                        .setDescription(mainDesc || null);
 
                     await sendChannel.send({ embeds: [firstEmbed] });
                     totalMessages++;
                 }
 
                 for (const category of categories) {
-                    // Build category embed
                     let categoryDescription = `> **${category.title}**\n`;
                     if (category.description.trim() !== '') {
                         categoryDescription += `> ${category.description}\n\n`;
                     }
-                    // categoryDescription += `> - ${category.roles.map(role => role.toString()).join('\n> - ')}`;
                     categoryDescription += `> **Roles:**`;
 
                     const categoryEmbed = new EmbedBuilder()
                         .setColor(EMBED_COLOR)
-                        // .setTitle(DEFAULT_EMBED_TITLE)
-                        .setDescription(categoryDescription)
-                    // .setFooter({ text: EMBED_FOOTER, iconURL: interaction.guild.iconURL() });
+                        .setDescription(categoryDescription);
 
-                    // Create buttons
                     const buttons = category.roles.map(role =>
                         new ButtonBuilder()
                             .setCustomId(`button_role:${role.id}`)
@@ -146,14 +168,12 @@ module.exports = {
                             .setStyle(ButtonStyle.Primary)
                     );
 
-                    // Split buttons into rows
                     const categoryActionRows = [];
                     while (buttons.length > 0) {
                         const rowButtons = buttons.splice(0, MAX_BUTTONS_PER_ROW);
                         categoryActionRows.push(new ActionRowBuilder().addComponents(rowButtons));
                     }
 
-                    // Split into message chunks
                     const rowChunks = [];
                     while (categoryActionRows.length > 0) {
                         rowChunks.push(categoryActionRows.splice(0, MAX_ROWS_PER_MESSAGE));
@@ -161,7 +181,6 @@ module.exports = {
 
                     totalMessages += rowChunks.length;
 
-                    // Send messages for this category
                     for (const [index, chunk] of rowChunks.entries()) {
                         const messageContent = index === 0 ? { embeds: [categoryEmbed] } : {};
                         await sendChannel.send({
@@ -175,10 +194,8 @@ module.exports = {
                     embeds: [simpleEmbed({ description: `**Created ${totalMessages} role messages in ${sendChannel}**`, color: 'Green' })]
                 });
             } else {
-                // Build combined embed
                 const roleEmbed = new EmbedBuilder()
                     .setColor(EMBED_COLOR)
-                    .setTitle(mainTitle || DEFAULT_EMBED_TITLE)
                     .setFooter({ text: EMBED_FOOTER, iconURL: interaction.guild.iconURL() });
 
                 let embedDescription = mainDesc ? `${mainDesc}\n\n` : '';
@@ -189,7 +206,6 @@ module.exports = {
                     embedDescription += `> **${category.title}**\n${description}`;
                     embedDescription += `> - ${category.roles.map(role => role.toString()).join('\n> - ')}\n\n`;
 
-                    // Create buttons
                     const buttons = category.roles.map(role =>
                         new ButtonBuilder()
                             .setCustomId(`button_role:${role.id}`)
@@ -197,27 +213,25 @@ module.exports = {
                             .setStyle(ButtonStyle.Primary)
                     );
 
-                    // Split buttons into rows
                     while (buttons.length > 0) {
                         const rowButtons = buttons.splice(0, MAX_BUTTONS_PER_ROW);
                         allActionRows.push(new ActionRowBuilder().addComponents(rowButtons));
                     }
                 }
 
-                // Set embed description based on format
                 if (formatOption === 'format') {
+                    roleEmbed.setTitle(mainTitle || DEFAULT_EMBED_TITLE);
                     roleEmbed.setDescription(embedDescription.trim());
                 } else {
-                    roleEmbed.setDescription(messageContent);
+                    // roleEmbed.setTitle(DEFAULT_EMBED_TITLE);
+                    roleEmbed.setDescription(templateMessage.content);
                 }
 
-                // Split into component chunks
                 const componentChunks = [];
                 while (allActionRows.length > 0) {
                     componentChunks.push(allActionRows.splice(0, MAX_ROWS_PER_MESSAGE));
                 }
 
-                // Send messages
                 for (const [index, chunk] of componentChunks.entries()) {
                     const messageContent = index === 0 ? { embeds: [roleEmbed] } : {};
                     await sendChannel.send({

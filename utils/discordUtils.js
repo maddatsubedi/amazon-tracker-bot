@@ -19,7 +19,6 @@ const removeExpiredSubscriptionFromUser = async (client, roles) => {
 
     for (let i = 0; i < deletedSubscriptions.length; i++) {
 
-
         const subscriptionData = deletedSubscriptions[i];
 
         const guildId = subscriptionData.guild_id;
@@ -42,6 +41,9 @@ const removeExpiredSubscriptionFromUser = async (client, roles) => {
                 continue;
             }
 
+            const userRoles = await member.roles.cache;
+            const userHasRole = await userRoles.has(premiumRoleId);
+
             const premiumRole = await guild.roles.cache.get(premiumRoleId);
 
             if (!premiumRole) {
@@ -57,11 +59,8 @@ const removeExpiredSubscriptionFromUser = async (client, roles) => {
                 premiumRoleFlag = true;
             });
 
-            const userRoles = await member.roles.cache;
-            const userHasRole = await userRoles.has(premiumRoleId);
-
             // const premiumRoleStatus = premiumRoleFlag ? 'Failed To Remove' : premiumRole ? 'Removed' : 'Not Found';
-            const premiumRoleStatus = !premiumRole ? 'Not Found' : premiumRoleFlag ? 'Failed To Remove' : userHasRole ? 'Removed' : 'User Does Not Have Role';
+            const premiumRoleStatus = !premiumRole ? `Not Found` : premiumRoleFlag ? `<@&${premiumRoleId}> (Failed To Remove)` : userHasRole ? `<@&${premiumRoleId}> (Removed)` : `<@&${premiumRoleId}> (User Does Not Have Role)`;
 
             const subscriptionRoles = getSubscriptionRoles(guildId);
             const removedSubscriptionRoles = [];
@@ -98,7 +97,10 @@ const removeExpiredSubscriptionFromUser = async (client, roles) => {
                 setTimestamp: true,
             }).addFields(
                 { name: 'User', value: `<@${userId}>`, inline: true },
-                { name: 'Role', value: `<@&${premiumRoleId}> (${premiumRoleStatus})`, inline: true }
+                { name: 'Role', value: premiumRoleStatus, inline: true },
+                { name: 'Added At', value: `\`${subscriptionData.added_at}\``, inline: true },
+                { name: 'Expires At', value: `\`${subscriptionData.expires_at}\``, inline: true },
+                { name: 'Duration Set', value: `\`${subscriptionData.duration}\``, inline: true },
             ).setFooter({
                 text: `${guild.name} | Subscription Logs`,
                 iconURL: guild.iconURL(),
@@ -114,7 +116,11 @@ const removeExpiredSubscriptionFromUser = async (client, roles) => {
             if (errorSubscriptionRoles.length > 0) {
                 const errorSubscriptionRolesString = errorSubscriptionRoles.map(role => `<@&${role}>`).join(', ');
                 logMessageEmbed.addFields(
-                    { name: 'Error Roles', value: errorSubscriptionRolesString, inline: false }
+                    {
+                        name: 'Error Occurred While Removing These Roles',
+                        value: errorSubscriptionRolesString,
+                        inline: false
+                    }
                 );
             }
 

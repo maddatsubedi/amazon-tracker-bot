@@ -1,6 +1,7 @@
 const db = require('./database/db');
-const { getGuildConfig } = require('./database/models/guildConfig');
+const { getGuildConfig, resetGuildConfig } = require('./database/models/guildConfig');
 
-const { addSubscription } = require('./database/models/subscription');
+const { addSubscription, getSubscription } = require('./database/models/subscription');
 
-// db.prepare("DROP TABLE subscription").run();
+// db.prepare("DROP TABLE subscriptionRoles").run();
+// resetGuildConfig("1312403263643189310");

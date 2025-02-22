@@ -4,6 +4,7 @@ const { parseDuration, } = require("../../../utils/helpers");
 const { addSubscription, getSubscription, } = require("../../../database/models/subscription");
 const { otherGuilds1 } = require('../../../config.json');
 const { getGuildConfig } = require("../../../database/models/guildConfig");
+const { log } = require("../../../utils/discordUtils");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -28,13 +29,12 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply();
 
+        const guild = interaction.guild;
+
         try {
             const user = interaction.options.getUser("user");
-
             const guildId = interaction.guild.id;
-
             const duration = interaction.options.getString("duration");
-
             const premiumRoleId = getGuildConfig(guildId, "premium_role_id");
 
             if (!premiumRoleId) {
@@ -74,19 +74,11 @@ module.exports = {
                     color: "Red",
                 }).addFields(
                     { name: "User", value: `<@${user.id}>`, inline: true },
-                    { name: "Role", value: `<@&${premiumRoleId}>`, inline: true }
-                );
+                    { name: "Role", value: `<@&${premiumRoleId}>`, inline: true },
+                    { name: "Added At", value: `\`${subscription.added_at}\``, inline: true },
+                    { name: "Expires At", value: `\`${subscription.expires_at}\``, inline: true }
 
-                if (subscription) {
-                    errorEmbed.addFields(
-                        { name: "Added At", value: `\`${subscription.added_at}\``, inline: true },
-                        {
-                            name: "Expires At",
-                            value: `\`${subscription.expires_at}\``,
-                            inline: true,
-                        }
-                    );
-                }
+                );
 
                 return await interaction.editReply({ embeds: [errorEmbed] });
             }
@@ -123,8 +115,6 @@ module.exports = {
             if (!userHasSubscription) {
                 addSubscription(user.id, guildId, currentDate, duration, expiresAt);
             } else {
-                const subscription = getSubscription(user.id, guildId);
-                // console.log(subscription);
                 addedAt = subscription.added_at;
                 expiresAt = new Date(subscription.expires_at).toUTCString();
             }
@@ -140,7 +130,7 @@ module.exports = {
             }
 
             if (!userHasPremiumRole && !userHasSubscription) {
-                successDescription = `The premium role was added to the user profile and the subscription was added to the user`;
+                successDescription = `New subscription was added to the user`;
             }
 
             const successEmbed = simpleEmbed({
@@ -148,11 +138,31 @@ module.exports = {
                 color: "Green",
             }).addFields(
                 { name: "User", value: `<@${user.id}>`, inline: true },
-                { name: "Role", value: `<@&${premiumRoleId}>`, inline: true },
+                { name: "Premium Role", value: `<@&${premiumRoleId}>`, inline: true },
                 { name: "Duration", value: `\`${duration}\``, inline: true },
                 { name: "Added At", value: `\`${addedAt}\``, inline: true },
                 { name: "Expires At", value: `\`${expiresAt}\``, inline: true }
             );
+
+            const logMessageEmbed = simpleEmbed({
+                title: 'Subscription Added',
+                description: `Subscription added to user`,
+                color: 'Green',
+                setTimestamp: true,
+            }).addFields(
+                { name: 'User', value: `<@${user.id}>`, inline: true },
+                { name: 'Premium Role', value: `<@&${premiumRoleId}>`, inline: true },
+                { name: 'Added At', value: `\`${addedAt}\``, inline: true },
+                { name: 'Expires At', value: `\`${expiresAt}\``, inline: true },
+                { name: 'Duration Set', value: `\`${duration}\``, inline: true },
+            ).setFooter({
+                text: `${guild.name} | Subscription Logs`,
+                iconURL: guild.iconURL(),
+            })
+
+            const logMessage = { embeds: [logMessageEmbed] };
+
+            await log(logMessage, guildId, interaction.client, "subscription");
 
             return await interaction.editReply({ embeds: [successEmbed] });
 

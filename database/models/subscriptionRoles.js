@@ -55,10 +55,16 @@ const removeSubscriptionRole = (guild_id, role_id) => {
     return result.changes > 0;
 }
 
+const clearSubscriptionRoles = (guild_id) => {
+    const result = db.prepare('DELETE FROM subscriptionRoles WHERE guild_id = ?').run(guild_id);
+    return result.changes > 0;
+}
+
 module.exports = {
     createSubscriptionRolesTable,
     getSubscriptionRoles,
     addSubscriptionRole,
     removeSubscriptionRole,
-    addBulkSubscriptionRoles
+    addBulkSubscriptionRoles,
+    clearSubscriptionRoles
 };

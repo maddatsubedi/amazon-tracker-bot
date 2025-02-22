@@ -6,6 +6,7 @@ const { getSubscription, removeSubscription } = require('../../../database/model
 const { otherGuilds1 } = require('../../../config.json');
 const { getGuildConfig } = require('../../../database/models/guildConfig');
 const { getSubscriptionRoles } = require('../../../database/models/subscriptionRoles');
+const { log } = require('../../../utils/discordUtils');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -27,16 +28,25 @@ module.exports = {
             const guildId = interaction.guild.id;
 
             const premiumRoleId = getGuildConfig(guildId, "premium_role_id");
-
-            if (!premiumRoleId) {
-                const errorEmbed = simpleEmbed({
-                    description: `**❌ \u200b Premium role not set**\n\n>>> Please set a premium role using \`/set-premium-role\``,
-                    color: "Red",
-                });
-                return await interaction.editReply({ embeds: [errorEmbed] });
-            }
-
             const premiumRole = await interaction.guild.roles.cache.get(premiumRoleId);
+
+            const member = interaction.guild.members.cache.get(user.id);
+            const userRoles = await member.roles.cache;
+            const userHasRole = await userRoles.has(premiumRoleId);
+
+            const subscription = getSubscription(user.id, guildId);
+            const userHasSubscription = subscription ? true : false;
+
+            const subscriptionRoles = getSubscriptionRoles(guildId);
+            const userHasSubscriptionRole = subscriptionRoles ? subscriptionRoles.some(role => userRoles.has(role.role_id)) : false;
+
+            // if (!premiumRoleId) {
+            //     const errorEmbed = simpleEmbed({
+            //         description: `**❌ \u200b Premium role not set**\n\n>>> Please set a premium role using \`/set-premium-role\``,
+            //         color: "Red",
+            //     });
+            //     return await interaction.editReply({ embeds: [errorEmbed] });
+            // }
 
             if (user.bot) {
                 const errorEmbed = simpleEmbed({
@@ -45,17 +55,6 @@ module.exports = {
                 });
                 return await interaction.editReply({ embeds: [errorEmbed] });
             }
-
-            const member = interaction.guild.members.cache.get(user.id);
-
-            const userRoles = await member.roles.cache;
-            const userHasRole = await userRoles.has(premiumRoleId);
-            const subscription = getSubscription(user.id, guildId);
-            const userHasSubscription = subscription ? true : false;
-
-            const subscriptionRoles = getSubscriptionRoles(guildId);
-
-            const userHasSubscriptionRole = subscriptionRoles ? subscriptionRoles.some(role => userRoles.has(role.role_id)) : false;
 
             if (!userHasRole && !userHasSubscription && !userHasSubscriptionRole) {
                 const errorEmbed = simpleEmbed({
@@ -103,9 +102,6 @@ module.exports = {
                 });
             }
 
-            // const premiumRoleStatus = roleRemoveError ? 'Failed To Remove' : userHasRole ? 'Removed' : 'Not Found';
-            const premiumRoleStatus = !premiumRole ? 'Not Found' : roleRemoveError ? 'Failed To Remove' : userHasRole ? 'Removed' : 'User Does Not Have Role';
-
             let dbSuccess = false;
             let successDescription = '';
 
@@ -142,12 +138,14 @@ module.exports = {
                 successDescription = `The user does not have the subscription but has subscription roles, these roles were removed from the user profile`;
             }
 
+            const premiumRoleStatus = !premiumRole ? `Not Found` : roleRemoveError ? `<@&${premiumRoleId}> (Failed To Remove)` : userHasRole ? `<@&${premiumRoleId}> (Removed)` : `<@&${premiumRoleId}> (User Does Not Have Role)`;
+
             const successEmbed = simpleEmbed({
                 description: `**✅ \u200b Premium Role successfully removed from user**\n\n${successDescription ? `${successDescription}\n\n` : ``}> **Role Configurations**`,
                 color: 'Green'
             }).addFields(
                 { name: 'User', value: `<@${user.id}>`, inline: true },
-                { name: 'Role', value: `<@&${premiumRoleId}> (${premiumRoleStatus})`, inline: true },
+                { name: 'Role', value: premiumRoleStatus, inline: true },
             );
 
             if (userHasSubscription) {
@@ -171,6 +169,44 @@ module.exports = {
                     { name: 'Error Roles', value: errorSubscriptionRolesString, inline: false }
                 );
             }
+
+            const logMessageEmbed = simpleEmbed({
+                title: 'Subscription Removed',
+                description: `Subscription removed from user`,
+                color: 'Red',
+                setTimestamp: true,
+            }).addFields(
+                { name: 'User', value: `<@${member.id}>`, inline: true },
+                { name: 'Role', value: premiumRoleStatus, inline: true },
+                { name: 'Added At', value: `\`${subscription.added_at}\``, inline: true },
+                { name: 'Expires At', value: `\`${subscription.expires_at}\``, inline: true },
+                { name: 'Duration Set', value: `\`${subscription.duration}\``, inline: true },
+            ).setFooter({
+                text: `${interaction.guild.name} | Subscription Logs`,
+                iconURL: interaction.guild.iconURL(),
+            })
+
+            if (removedSubscriptionRoles.length > 0) {
+                const removedSubscriptionRolesString = removedSubscriptionRoles.map(role => `<@&${role}>`).join(', ');
+                logMessageEmbed.addFields(
+                    { name: 'Removed Roles', value: removedSubscriptionRolesString, inline: false }
+                );
+            }
+
+            if (errorSubscriptionRoles.length > 0) {
+                const errorSubscriptionRolesString = errorSubscriptionRoles.map(role => `<@&${role}>`).join(', ');
+                logMessageEmbed.addFields(
+                    {
+                        name: 'Error Occurred While Removing These Roles',
+                        value: errorSubscriptionRolesString,
+                        inline: false
+                    }
+                );
+            }
+
+            const logMessage = { embeds: [logMessageEmbed] };
+
+            await log(logMessage, guildId, interaction.client, "subscription");
 
             return await interaction.editReply({ embeds: [successEmbed] });
 

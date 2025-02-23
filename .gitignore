@@ -12,6 +12,9 @@
 /.env
 /config.json
 
+# database
+/database/storage/
+
 # zip
 /.zip
 

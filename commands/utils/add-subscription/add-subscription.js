@@ -83,16 +83,6 @@ module.exports = {
                 return await interaction.editReply({ embeds: [errorEmbed] });
             }
 
-            // if (userHasSubscription) {
-            //     const errorEmbed = simpleEmbed({
-            //         description: `**❌ \u200b The user already has the role in database**\n\n> Please select a different user or choose different role\n\`You can try giving the role manually or use '/remove-role' to remove the role first and '/add-role' to add role again\``, color: 'Red'
-            //     }).addFields(
-            //         { name: 'User', value: `<@${user.id}>`, inline: true },
-            //         { name: 'Role', value: `<@&${premiumRoleId}>`, inline: true },
-            //     );
-            //     return await interaction.editReply({ embeds: [errorEmbed] });
-            // }
-
             const durationMs = parseDuration(duration);
 
             if (!durationMs) {

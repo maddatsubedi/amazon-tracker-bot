@@ -5,8 +5,7 @@ const { getSubscriptionRoles } = require('../database/models/subscriptionRoles')
 const { simpleEmbed } = require('../embeds/generalEmbeds');
 const { logTypesChannelMap } = require('./dbUtils.json');
 
-// const expiresSubscriptionsRemovalInterval = 60000; // 1 minute
-const expiresSubscriptionsRemovalInterval = 5000; // 5 seconds
+const expiresSubscriptionsRemovalInterval = 60000; // 1 minute
 
 const removeExpiredSubscriptionFromUser = async (client, roles) => {
     if (!roles || roles.deletedSubscriptions.length === 0) return;

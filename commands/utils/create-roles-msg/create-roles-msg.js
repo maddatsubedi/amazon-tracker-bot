@@ -153,9 +153,9 @@ module.exports = {
                 for (const category of categories) {
                     let categoryDescription = `> **${category.title}**\n`;
                     if (category.description.trim() !== '') {
-                        categoryDescription += `> ${category.description}\n\n`;
+                        categoryDescription += `> ${category.description}\n`;
                     }
-                    categoryDescription += `> **Roles:**`;
+                    categoryDescription += `\n> **Roles:**`;
 
                     const categoryEmbed = new EmbedBuilder()
                         .setColor(EMBED_COLOR)

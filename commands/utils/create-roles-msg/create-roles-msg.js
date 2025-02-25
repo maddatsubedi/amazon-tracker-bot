@@ -35,7 +35,7 @@ module.exports = {
             const MAX_BUTTONS_PER_ROW = 5;
             const MAX_ROWS_PER_MESSAGE = 5;
             const EMBED_COLOR = generateRandomHexColor();
-            const DEFAULT_EMBED_TITLE = 'Role Selection';
+            const DEFAULT_EMBED_TITLE = 'Roles Selection';
             const EMBED_FOOTER = `${interaction.guild.name} | Roles Selection`;
 
             // Get inputs

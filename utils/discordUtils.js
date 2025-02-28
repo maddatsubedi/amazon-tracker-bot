@@ -182,7 +182,205 @@ const log = async (message, guildId, client, type) => {
 
 }
 
+// Helper function to safely format embed field values
+function safeField(text) {
+    const MAX_LENGTH = 1024;
+    const MIN_RESERVED_SUFFIX = 25;
+    if (text.length <= MAX_LENGTH) return text;
+
+    // Split items by comma and space
+    const itemsArray = text.split(', ');
+    let result = "";
+    let count = 0;
+    for (const item of itemsArray) {
+        // Check if adding the next item would exceed the limit
+        if ((result + item + ', ').length > MAX_LENGTH - MIN_RESERVED_SUFFIX) break;
+        result += item + ', ';
+        count++;
+    }
+    // Remove the trailing comma and space
+    result = result.slice(0, -2);
+    const remaining = itemsArray.length - count;
+    return `${result} ... and ${remaining} more.`;
+}
+
+const premiumServerLock = async (guild, premiumRoleId) => {
+
+    try {
+
+        const guildId = guild.id;
+
+        const publicChannelID = getGuildConfig(guildId, 'publicChannelID');
+        const privateChannels = getGuildConfig(guildId, 'privateChannels');
+        const privateChannelsArray = privateChannels ? privateChannels.split(',') : [];
+
+        const publicChannel = guild.channels.cache.get(publicChannelID);
+
+        const fullPromises = [];
+
+        for (const channel of guild.channels.cache.values()) {
+            if (channel.id === publicChannelID) continue;
+            if (privateChannelsArray.includes(channel.id)) continue;
+
+            fullPromises.push(
+                channel.permissionOverwrites?.edit(premiumRoleId, { ViewChannel: true }),
+                channel.permissionOverwrites?.edit(guild.roles.everyone, { ViewChannel: false })
+            );
+        }
+
+        await Promise.all(fullPromises);
+        // console.log("Full");
+
+        // PBC (Public Channel)
+        if (publicChannel) {
+            try {
+                await publicChannel.permissionOverwrites?.edit(premiumRoleId, { ViewChannel: null });
+                await publicChannel.permissionOverwrites?.edit(guild.roles.everyone, { ViewChannel: null });
+                // console.log("PBC");
+            } catch (error) {
+                console.error(`[LOCK_PREMIUM : PBC] : Error setting permissions for channel ${publicChannel.name} in guild ${guild.name}`);
+            }
+        }
+
+        // PRCS (Private Channels)
+        const prcsPromises = [];
+
+        for (const channelId of privateChannelsArray) {
+            const channel = guild.channels.cache.get(channelId);
+            if (!channel) continue;
+
+            prcsPromises.push(
+                channel.permissionOverwrites?.edit(premiumRoleId, { ViewChannel: null }),
+                channel.permissionOverwrites?.edit(guild.roles.everyone, { ViewChannel: false })
+            );
+        }
+
+        await Promise.all(prcsPromises);
+
+        const privateChannelsList = privateChannelsArray.map(channel => `<#${channel}>`).join(', ');
+
+        const embed = simpleEmbed({
+            footer: `${guild.name} | Premium Lock`,
+            title: 'Server Locked',
+            color: 'Random',
+        }).addFields(
+            { name: 'Premium Role', value: `> <@&${premiumRoleId}>` },
+        );
+
+        if (publicChannel) {
+            embed.addFields(
+                { name: 'Public Channel', value: `> <#${publicChannelID}>` },
+            );
+        }
+
+        if (privateChannelsList.length > 0) {
+            embed.addFields(
+                { name: 'Private Channels', value: `> ${safeField(privateChannelsList)}` },
+            );
+        }
+
+        return {
+            success: true,
+            embed,
+        }
+
+    } catch (error) {
+        console.log(`Error while locking server: ${error.message}`);
+        return {
+            error: "LOCK_SERVER_ERROR",
+        }
+    }
+}
+
+const premiumServerUnlock = async (guild, premiumRoleId) => {
+
+    try {
+
+        const guildId = guild.id;
+
+        const publicChannelID = getGuildConfig(guildId, 'publicChannelID');
+        const privateChannels = getGuildConfig(guildId, 'privateChannels');
+        const privateChannelsArray = privateChannels ? privateChannels.split(',') : [];
+
+        const publicChannel = guild.channels.cache.get(publicChannelID);
+
+        const fullPromises = [];
+
+        for (const channel of guild.channels.cache.values()) {
+            if (channel.id === publicChannelID) continue;
+            if (privateChannelsArray.includes(channel.id)) continue;
+
+            fullPromises.push(
+                channel.permissionOverwrites?.edit(premiumRoleId, { ViewChannel: null }),
+                channel.permissionOverwrites?.edit(guild.roles.everyone, { ViewChannel: null })
+            );
+        }
+
+        await Promise.all(fullPromises);
+        // console.log("Full");
+
+        // PBC (Public Channel)
+        if (publicChannel) {
+            try {
+                await publicChannel.permissionOverwrites?.edit(premiumRoleId, { ViewChannel: null });
+                await publicChannel.permissionOverwrites?.edit(guild.roles.everyone, { ViewChannel: null });
+                // console.log("PBC");
+            } catch (error) {
+                console.error(`[LOCK_PREMIUM : PBC] : Error setting permissions for channel ${publicChannel.name} in guild ${guild.name}`);
+            }
+        }
+
+        // PRCS (Private Channels)
+        const prcsPromises = [];
+
+        for (const channelId of privateChannelsArray) {
+            const channel = guild.channels.cache.get(channelId);
+            if (!channel) continue;
+
+            prcsPromises.push(
+                channel.permissionOverwrites?.edit(premiumRoleId, { ViewChannel: null }),
+                channel.permissionOverwrites?.edit(guild.roles.everyone, { ViewChannel: false })
+            );
+        }
+
+        await Promise.all(prcsPromises);
+
+        const privateChannelsList = privateChannelsArray.map(channel => `<#${channel}>`).join(', ');
+
+        const embed = simpleEmbed({
+            footer: `${guild.name} | Premium Lock`,
+            title: 'Server Unlocked',
+            color: 'Random',
+        }).addFields(
+            { name: 'Premium Role', value: `> <@&${premiumRoleId}>` },
+        );
+
+        if (publicChannel) {
+            embed.addFields(
+                { name: 'Public Channel', value: `> <#${publicChannelID}>` },
+            );
+        }
+
+        if (privateChannelsList.length > 0) {
+            embed.addFields(
+                { name: 'Private Channels', value: `> ${safeField(privateChannelsList)}` },
+            );
+        }
+
+        return {
+            success: true,
+            embed,
+        }
+
+    } catch (error) {
+        console.log(`Error while unlocking server: ${error.message}`);
+    }
+}
+
 module.exports = {
     runExpiredSubscriptionsRemoval,
-    log
+    log,
+    safeField,
+    premiumServerLock,
+    premiumServerUnlock,
 }

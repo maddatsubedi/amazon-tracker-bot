@@ -2,6 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder, ChannelType } = require('discord.js')
 const { simpleEmbed } = require('../../../embeds/generalEmbeds');
 const { otherGuilds1 } = require('../../../config.json');
 const { addBulkSubscriptionRoles } = require('../../../database/models/subscriptionRoles');
+const { safeField } = require('../../../utils/discordUtils');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -109,24 +110,24 @@ module.exports = {
             const successfulRolesList = setRoles.successful.map(roleId => `<@&${roleId}>`).join(', ');
 
             embed.addFields(
-                { name: 'Roles Found', value: rolesList, inline: false }
+                { name: 'Roles Found', value: safeField(rolesList), inline: false }
             );
 
             if (setRoles.duplicates.length > 0) {
                 embed.addFields(
-                    { name: 'Duplicate Roles', value: duplicateRolesList, inline: false }
+                    { name: 'Duplicate Roles', value: safeField(duplicateRolesList), inline: false }
                 );
             }
 
             if (setRoles.errors.length > 0) {
                 embed.addFields(
-                    { name: 'Error Roles', value: errorRolesList, inline: false }
+                    { name: 'Error Roles', value: safeField(errorRolesList), inline: false }
                 );
             }
 
             if (setRoles.successful.length > 0) {
                 embed.addFields(
-                    { name: 'Added Roles', value: successfulRolesList, inline: false }
+                    { name: 'Added Roles', value: safeField(successfulRolesList), inline: false }
                 );
             }
 

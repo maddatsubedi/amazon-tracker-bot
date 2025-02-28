@@ -2,6 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder, ChannelType } = require('discord.js')
 const { simpleEmbed } = require('../../../embeds/generalEmbeds');
 const { otherGuilds1 } = require('../../../config.json');
 const { getSubscriptionRoles, clearSubscriptionRoles } = require('../../../database/models/subscriptionRoles');
+const { safeField } = require('../../../utils/discordUtils');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -32,7 +33,7 @@ module.exports = {
                     });
                 }
 
-                const [ , linkGuildId, channelId, messageId ] = linkMatch;
+                const [, linkGuildId, channelId, messageId] = linkMatch;
                 if (linkGuildId !== interaction.guildId) {
                     return interaction.editReply({
                         embeds: [simpleEmbed({ description: '**Message link must be from this server**', color: 'Red' })]
@@ -100,7 +101,7 @@ module.exports = {
                     color: 'Random'
                 })
                     .setFooter({ text: `${interaction.guild.name} | Subscription Roles`, iconURL: interaction.guild.iconURL() })
-                    .addFields({ name: 'Roles Removed', value: removedRolesList, inline: false });
+                    .addFields({ name: 'Roles Removed', value: safeField(removedRolesList), inline: false });
 
                 return interaction.editReply({ embeds: [embed] });
 
@@ -123,7 +124,7 @@ module.exports = {
                     color: 'Random'
                 })
                     .setFooter({ text: `${interaction.guild.name} | Subscription Roles`, iconURL: interaction.guild.iconURL() })
-                    .addFields({ name: 'Roles Cleared', value: rolesList, inline: false });
+                    .addFields({ name: 'Roles Cleared', value: safeField(rolesList), inline: false });
 
                 return interaction.editReply({ embeds: [embed] });
             }

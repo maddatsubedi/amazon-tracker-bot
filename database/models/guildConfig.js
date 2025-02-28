@@ -37,11 +37,26 @@ const resetGuildConfig = (guildId) => {
     db.prepare('DELETE FROM guildconfig WHERE guildId = ?').run(guildId);
 };
 
+const lockPremium = (guildId) => {
+    setGuildConfig(guildId, 'lockPremium', 'true');
+};
+
+const unlockPremium = (guildId) => {
+    setGuildConfig(guildId, 'lockPremium', 'false');
+};
+
+const isPremiumLocked = (guildId) => {
+    return getGuildConfig(guildId, 'lockPremium') === 'true';
+};
+
 module.exports = {
     createGuildConfigTable,
     setGuildConfig,
     getGuildConfig,
     getAllGuildConfigs,
     deleteGuildConfig,
-    resetGuildConfig
+    resetGuildConfig,
+    lockPremium,
+    unlockPremium,
+    isPremiumLocked
 };

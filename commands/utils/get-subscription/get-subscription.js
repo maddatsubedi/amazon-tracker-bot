@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const { simpleEmbed } = require('../../../embeds/generalEmbeds');
 const { setRange, getRangeDetails } = require('../../../database/models/discount_range');
 const { validateRange, checkRole } = require('../../../utils/helpers');
@@ -20,18 +20,21 @@ module.exports = {
     otherGuilds: otherGuilds1,
     async execute(interaction) {
 
-        await interaction.deferReply();
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         try {
 
+            const interactionUser = interaction.user;
+            const interactionMember = await interaction.guild.members.fetch(interactionUser.id).catch(() => null);
+
             const user = interaction.options.getUser('user') || interaction.user;
-            const member = interaction.member;
+            const member = await interaction.guild.members.fetch(user.id).catch(() => null);
             const guildId = interaction.guild.id;
 
-            const isInteractionUser = interaction.user.id === user.id;
+            const isInteractionUser = interactionUser.id === user.id;
 
             const adminRoleId = getGuildConfig(guildId, 'adminRoleID');
-            const isAdmin = checkRole(member, adminRoleId);
+            const isAdmin = checkRole(interactionMember, adminRoleId);
 
             const premiumRoleId = getGuildConfig(guildId, "premium_role_id");
             const premiumRole = await interaction.guild.roles.cache.get(premiumRoleId);
@@ -47,7 +50,7 @@ module.exports = {
             const userSubscriptionRolesList = userSubscriptionRoles.map(role => `<@&${role.role_id}>`).join(', ');
             const userHasSubscriptionRoles = userSubscriptionRoles.length > 0;
 
-            if (!isAdmin && interaction.user.id !== user.id) {
+            if (!isAdmin && !isInteractionUser) {
                 const errorEmbed = simpleEmbed({
                     description: `**❌ \u200b You are not allowed to see others subscription**\n\n>>> You can only see your own subscription`,
                     color: 'Red'
@@ -65,11 +68,14 @@ module.exports = {
 
             if (!userHasRole && !userHasSubscription && !userHasSubscriptionRoles) {
                 const errorEmbed = simpleEmbed({
-                    description: `**❌ \u200b ${isInteractionUser ? "You do" : "The user does"} not have the active subscription**\n\nPlease select a different user`,
+                    description: `❌ \u200b ${isInteractionUser ? "**You do not have the active subscription**" : "**The user does not have the active subscription** \n\nPlease select a different user"}`,
                     color: 'Red'
-                }).addFields(
-                    { name: 'User', value: `<@${user.id}>`, inline: true },
-                );
+                });
+                if (!isInteractionUser) {
+                    errorEmbed.addFields(
+                        { name: 'User', value: `<@${user.id}>`, inline: true },
+                    );;
+                }
                 return await interaction.editReply({ embeds: [errorEmbed] });
             }
 
@@ -107,7 +113,7 @@ module.exports = {
                 description: `> ${description}`,
                 color: 'Random',
             }).addFields(
-                { name: 'User', value: `<@${member.id}>`, inline: true },
+                { name: 'User', value: `<@${user.id}>`, inline: true },
                 { name: 'Premium Role', value: premiumRoleStatus, inline: true },
             ).setFooter({
                 text: `${interaction.guild.name} | Subscription`,

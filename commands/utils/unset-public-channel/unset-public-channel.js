@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionsBitField, ChannelType, PermissionFlagsBits } = require('discord.js');
 const { getConfig, setConfig, deleteConfig, resetConfig } = require('../../../database/models/config');
 const { simpleEmbed } = require('../../../embeds/generalEmbeds');
-const { setGuildConfig, deleteGuildConfig, getGuildConfig } = require('../../../database/models/guildConfig');
+const { setGuildConfig, deleteGuildConfig, getGuildConfig, isPremiumLocked } = require('../../../database/models/guildConfig');
 const { otherGuilds1 } = require('../../../config.json');
 const wait = require('node:timers/promises').setTimeout;
 
@@ -24,9 +24,15 @@ module.exports = {
 
         const channel = interaction.guild.channels.cache.get(previousChannelID);
 
+        const isLocked = isPremiumLocked(guildId);
+
+        const viewChannelPerm = isLocked ?
+            { ViewChannel: false } :
+            { ViewChannel: null };
+
         if (channel) {
-            await channel.permissionOverwrites.edit(channel.guild.roles.everyone, { ViewChannel: null }).catch((error) => {
-                console.error(`[SET_PUBLIC_CHANNEL] : Error setting permissions for channel ${channel.name} in guild ${channel.guild.name}`);
+            await channel.permissionOverwrites?.edit(channel.guild.roles.everyone, viewChannelPerm).catch((error) => {
+                console.error(`[UNSET_PUBLIC_CHANNEL] : Error setting permissions for channel ${channel.name} in guild ${channel.guild.name}`);
             });
         }
 

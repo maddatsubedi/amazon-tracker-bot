@@ -22,7 +22,7 @@ module.exports = {
         const channelID = channel.id;
         const guildId = interaction.guild.id;
 
-        await channel.permissionOverwrites.edit(channel.guild.roles.everyone, { ViewChannel: null }).catch((error) => {
+        await channel.permissionOverwrites?.edit(channel.guild.roles.everyone, { ViewChannel: null }).catch((error) => {
             console.error(`[SET_PUBLIC_CHANNEL] : Error setting permissions for channel ${channel.name} in guild ${channel.guild.name}`);
         });
 

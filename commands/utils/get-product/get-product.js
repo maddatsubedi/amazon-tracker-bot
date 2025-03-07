@@ -21,6 +21,14 @@ module.exports = {
 
         await interaction.deferReply();
 
+        // Maintenance mode
+        const maintenanceEmbed = simpleEmbed({
+            description: `**This command is temporarily disabled for maintenance**`,
+            color: 'Red',
+        })
+
+        return await interaction.editReply({ embeds: [maintenanceEmbed] });
+
         const asin = interaction.options.getString('asin');
         const domain = interaction.options.getString('domain');
 

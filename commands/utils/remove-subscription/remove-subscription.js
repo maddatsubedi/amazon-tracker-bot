@@ -213,7 +213,7 @@ module.exports = {
         } catch (error) {
             console.error(error);
             const errorEmbed = simpleEmbed({
-                description: `**❌ \u200b An error occurred while adding the role**\n\n>>> Make sure the bot role is higher than the role you are trying to remove`,
+                description: `**❌ \u200b An error occurred while adding the role**\n\n>>> Make sure the bot role is above the premium role or the role is not a bot role`,
                 color: 'Red'
             });
             return await interaction.editReply({ embeds: [errorEmbed] });

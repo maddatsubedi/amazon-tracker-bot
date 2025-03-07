@@ -22,6 +22,7 @@ module.exports = {
 
             await interaction.deferReply();
 
+            // Maintenance mode
             const maintenanceEmbed = simpleEmbed({
                 description: `**This command is temporarily disabled for maintenance**`,
                 color: 'Red',

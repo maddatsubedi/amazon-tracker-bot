@@ -4,6 +4,7 @@ const { removeExpiredSubscriptions } = require('../database/models/subscription'
 const { getSubscriptionRoles } = require('../database/models/subscriptionRoles');
 const { simpleEmbed } = require('../embeds/generalEmbeds');
 const { logTypesChannelMap } = require('./dbUtils.json');
+const moment = require('moment-timezone');
 
 const expiresSubscriptionsRemovalInterval = 60000; // 1 minute
 
@@ -89,6 +90,8 @@ const removeExpiredSubscriptionFromUser = async (client, roles) => {
                 console.log(`No subscription roles found for guild: ${guildId}`);
             }
 
+            const momentDuration = moment.duration(moment(subscriptionData.expires_at).diff(moment(subscriptionData.added_at))).humanize();
+
             const logMessageEmbed = simpleEmbed({
                 title: 'Subscription Expired',
                 description: `Subscription removed from user`,
@@ -99,7 +102,7 @@ const removeExpiredSubscriptionFromUser = async (client, roles) => {
                 { name: 'Role', value: premiumRoleStatus, inline: true },
                 { name: 'Added At', value: `\`${subscriptionData.added_at}\``, inline: true },
                 { name: 'Expires At', value: `\`${subscriptionData.expires_at}\``, inline: true },
-                { name: 'Duration Set', value: `\`${subscriptionData.duration}\``, inline: true },
+                { name: 'Duration Set', value: `\`${subscriptionData.duration} (${momentDuration})\``, inline: true },
             ).setFooter({
                 text: `${guild.name} | Subscription Logs`,
                 iconURL: guild.iconURL(),

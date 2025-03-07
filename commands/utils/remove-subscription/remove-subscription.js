@@ -7,6 +7,7 @@ const { otherGuilds1 } = require('../../../config.json');
 const { getGuildConfig } = require('../../../database/models/guildConfig');
 const { getSubscriptionRoles } = require('../../../database/models/subscriptionRoles');
 const { log } = require('../../../utils/discordUtils');
+const moment = require('moment-timezone');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -148,11 +149,32 @@ module.exports = {
                 { name: 'Role', value: premiumRoleStatus, inline: true },
             ).setThumbnail(user.displayAvatarURL({ dynamic: true }));
 
+            const logMessageEmbed = simpleEmbed({
+                title: 'Subscription Removed',
+                description: `Subscription removed from user`,
+                color: 'Red',
+                setTimestamp: true,
+            }).addFields(
+                { name: 'User', value: `<@${member.id}>`, inline: true },
+                { name: 'Role', value: premiumRoleStatus, inline: true },
+            ).setFooter({
+                text: `${interaction.guild.name} | Subscription Logs`,
+                iconURL: interaction.guild.iconURL(),
+            }).setThumbnail(user.displayAvatarURL({ dynamic: true }))
+
             if (userHasSubscription) {
+                const momentDuration = moment.duration(moment(subscription.expires_at).diff(moment(subscription.added_at))).humanize();
+
                 successEmbed.addFields(
                     { name: 'Added At', value: `\`${subscription.added_at}\``, inline: true },
                     { name: 'Expires At', value: `\`${subscription.expires_at}\``, inline: true },
-                    { name: 'Duration Set', value: `\`${subscription.duration}\``, inline: true },
+                    { name: 'Duration Set', value: `\`${subscription.duration} (${momentDuration})\``, inline: true },
+                );
+
+                logMessageEmbed.addFields(
+                    { name: 'Added At', value: `\`${subscription.added_at}\``, inline: true },
+                    { name: 'Expires At', value: `\`${subscription.expires_at}\``, inline: true },
+                    { name: 'Duration Set', value: `\`${subscription.duration} (${momentDuration})\``, inline: true },
                 );
             }
 
@@ -169,22 +191,6 @@ module.exports = {
                     { name: 'Error Roles', value: errorSubscriptionRolesString, inline: false }
                 );
             }
-
-            const logMessageEmbed = simpleEmbed({
-                title: 'Subscription Removed',
-                description: `Subscription removed from user`,
-                color: 'Red',
-                setTimestamp: true,
-            }).addFields(
-                { name: 'User', value: `<@${member.id}>`, inline: true },
-                { name: 'Role', value: premiumRoleStatus, inline: true },
-                { name: 'Added At', value: `\`${subscription.added_at}\``, inline: true },
-                { name: 'Expires At', value: `\`${subscription.expires_at}\``, inline: true },
-                { name: 'Duration Set', value: `\`${subscription.duration}\``, inline: true },
-            ).setFooter({
-                text: `${interaction.guild.name} | Subscription Logs`,
-                iconURL: interaction.guild.iconURL(),
-            }).setThumbnail(user.displayAvatarURL({ dynamic: true }))
 
             if (removedSubscriptionRoles.length > 0) {
                 const removedSubscriptionRolesString = removedSubscriptionRoles.map(role => `<@&${role}>`).join(', ');

@@ -7,6 +7,7 @@ const { otherGuilds1 } = require('../../../config.json');
 const { getGuildConfig } = require('../../../database/models/guildConfig');
 const { getSubscriptionRoles } = require('../../../database/models/subscriptionRoles');
 const { log, safeField } = require('../../../utils/discordUtils');
+const moment = require('moment-timezone');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -125,10 +126,15 @@ module.exports = {
             }
 
             if (userHasSubscription) {
+
+                const timeRemaining = moment.duration(moment(subscription.expires_at).diff(moment())).humanize();
+                const momentDuration = moment.duration(moment(subscription.expires_at).diff(moment(subscription.added_at))).humanize();
+
                 successEmbed.addFields(
                     { name: 'Added At', value: `\`${subscription.added_at}\``, inline: true },
                     { name: 'Expires At', value: `\`${subscription.expires_at}\``, inline: true },
-                    { name: 'Duration Set', value: `\`${subscription.duration}\``, inline: true },
+                    { name: 'Duration Set', value: `\`${subscription.duration} (${momentDuration})\``, inline: true },
+                    { name: 'Time Remaining', value: `\`${timeRemaining}\``, inline: true },
                 );
             }
 

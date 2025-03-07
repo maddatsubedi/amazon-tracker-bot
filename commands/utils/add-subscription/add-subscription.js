@@ -5,6 +5,7 @@ const { addSubscription, getSubscription, } = require("../../../database/models/
 const { otherGuilds1 } = require('../../../config.json');
 const { getGuildConfig } = require("../../../database/models/guildConfig");
 const { log } = require("../../../utils/discordUtils");
+const moment = require('moment-timezone');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -123,13 +124,15 @@ module.exports = {
                 successDescription = `New subscription was added to the user`;
             }
 
+            const momentDuration = moment.duration(moment(expiresAt).diff(moment(addedAt))).humanize();
+
             const successEmbed = simpleEmbed({
                 description: `**✅ \u200b Subscription successfully added to the user**\n\n${successDescription}\n\n> **Role Configurations**`,
                 color: "Green",
             }).addFields(
                 { name: "User", value: `<@${user.id}>`, inline: true },
                 { name: "Premium Role", value: `<@&${premiumRoleId}>`, inline: true },
-                { name: "Duration", value: `\`${duration}\``, inline: true },
+                { name: "Duration Set", value: `\`${duration} (${momentDuration})\``, inline: true },
                 { name: "Added At", value: `\`${addedAt}\``, inline: true },
                 { name: "Expires At", value: `\`${expiresAt}\``, inline: true }
             ).setThumbnail(user.displayAvatarURL({ dynamic: true }));
@@ -144,7 +147,7 @@ module.exports = {
                 { name: 'Premium Role', value: `<@&${premiumRoleId}>`, inline: true },
                 { name: 'Added At', value: `\`${addedAt}\``, inline: true },
                 { name: 'Expires At', value: `\`${expiresAt}\``, inline: true },
-                { name: 'Duration Set', value: `\`${duration}\``, inline: true },
+                { name: 'Duration Set', value: `\`${duration} (${momentDuration})\``, inline: true },
             ).setFooter({
                 text: `${guild.name} | Subscription Logs`,
                 iconURL: guild.iconURL(),

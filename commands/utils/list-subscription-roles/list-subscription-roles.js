@@ -2,6 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder, ChannelType } = require('discord.js')
 const { simpleEmbed } = require('../../../embeds/generalEmbeds');
 const { otherGuilds1 } = require('../../../config.json');
 const { addBulkSubscriptionRoles, getSubscriptionRoles } = require('../../../database/models/subscriptionRoles');
+const { safeField } = require('../../../utils/discordUtils');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -35,7 +36,7 @@ module.exports = {
             ).setFooter(
                 { text: `${interaction.guild.name} | Subscription Roles`, iconURL: interaction.guild.iconURL() }
             ).addFields(
-                { name: 'Roles Found', value: rolesList, inline: false }
+                { name: 'Roles Found', value: safeField(rolesList), inline: false }
             );
 
             return interaction.editReply({ embeds: [embed] });

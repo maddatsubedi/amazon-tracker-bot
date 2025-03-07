@@ -132,7 +132,7 @@ module.exports = {
                 { name: "Duration", value: `\`${duration}\``, inline: true },
                 { name: "Added At", value: `\`${addedAt}\``, inline: true },
                 { name: "Expires At", value: `\`${expiresAt}\``, inline: true }
-            );
+            ).setThumbnail(user.displayAvatarURL({ dynamic: true }));
 
             const logMessageEmbed = simpleEmbed({
                 title: 'Subscription Added',
@@ -148,7 +148,7 @@ module.exports = {
             ).setFooter({
                 text: `${guild.name} | Subscription Logs`,
                 iconURL: guild.iconURL(),
-            })
+            }).setThumbnail(user.displayAvatarURL({ dynamic: true }))
 
             const logMessage = { embeds: [logMessageEmbed] };
 

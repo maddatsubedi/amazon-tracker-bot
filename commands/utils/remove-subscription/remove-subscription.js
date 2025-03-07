@@ -146,7 +146,7 @@ module.exports = {
             }).addFields(
                 { name: 'User', value: `<@${user.id}>`, inline: true },
                 { name: 'Role', value: premiumRoleStatus, inline: true },
-            );
+            ).setThumbnail(user.displayAvatarURL({ dynamic: true }));
 
             if (userHasSubscription) {
                 successEmbed.addFields(
@@ -184,7 +184,7 @@ module.exports = {
             ).setFooter({
                 text: `${interaction.guild.name} | Subscription Logs`,
                 iconURL: interaction.guild.iconURL(),
-            })
+            }).setThumbnail(user.displayAvatarURL({ dynamic: true }))
 
             if (removedSubscriptionRoles.length > 0) {
                 const removedSubscriptionRolesString = removedSubscriptionRoles.map(role => `<@&${role}>`).join(', ');

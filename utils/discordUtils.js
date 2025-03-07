@@ -103,7 +103,7 @@ const removeExpiredSubscriptionFromUser = async (client, roles) => {
             ).setFooter({
                 text: `${guild.name} | Subscription Logs`,
                 iconURL: guild.iconURL(),
-            })
+            }).setThumbnail(member.user.displayAvatarURL({ dynamic: true }));
 
             if (removedSubscriptionRoles.length > 0) {
                 const removedSubscriptionRolesString = removedSubscriptionRoles.map(role => `<@&${role}>`).join(', ');
@@ -126,7 +126,7 @@ const removeExpiredSubscriptionFromUser = async (client, roles) => {
             const logMessage = { embeds: [logMessageEmbed] };
 
             await log(logMessage, guildId, client, "subscription");
-            console.log(`Removed premium role ${premiumRole.name} from ${member.user.username}`);
+            // console.log(`Removed premium role ${premiumRole.name} from ${member.user.username}`);
 
         } catch (error) {
             console.log(`Error removing premium role from user, user: ${userId}, guildId: ${guildId}`);

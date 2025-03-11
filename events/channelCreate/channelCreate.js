@@ -4,8 +4,6 @@ const { simpleEmbed } = require('../../embeds/generalEmbeds');
 const moment = require('moment-timezone');
 const { premiumServerLock } = require('../../utils/discordUtils');
 
-const TICKET_CHANNEL_MESSAGE_DELAY = 3000;
-
 module.exports = {
     name: Events.ChannelCreate,
     async execute(channel) {

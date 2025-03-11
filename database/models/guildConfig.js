@@ -49,6 +49,34 @@ const isPremiumLocked = (guildId) => {
     return getGuildConfig(guildId, 'lockPremium') === 'true';
 };
 
+const addMultiValueGuildConfig = (guildId, key, value, seperator) => {
+    const existingValue = getGuildConfig(guildId, key);
+    const existingValuesArray = existingValue ? existingValue.split(seperator).map(value => value.trim()).filter(Boolean) : [];
+    if (existingValuesArray.includes(value)) {
+        return false;
+    };
+    existingValuesArray.push(value);
+    const newValue = existingValuesArray.join(seperator);
+    setGuildConfig(guildId, key, newValue);
+    return true;
+}
+
+const getMultiValueGuildConfig = (guildId, key, seperator) => {
+    const existingValue = getGuildConfig(guildId, key);
+    return existingValue ? existingValue.split(seperator).map(value => value.trim()).filter(Boolean) : [];
+}
+
+const removeMultiValueGuildConfig = (guildId, key, value, seperator) => {
+    const existingValue = getGuildConfig(guildId, key);
+    const existingValuesArray = existingValue ? existingValue.split(seperator).map(value => value.trim()).filter(Boolean) : [];
+    if (!existingValuesArray.includes(value)) {
+        return false;
+    };
+    const newValue = existingValuesArray.filter(existingValue => existingValue !== value).join(seperator);
+    setGuildConfig(guildId, key, newValue);
+    return true;
+}
+
 module.exports = {
     createGuildConfigTable,
     setGuildConfig,
@@ -58,5 +86,8 @@ module.exports = {
     resetGuildConfig,
     lockPremium,
     unlockPremium,
-    isPremiumLocked
+    isPremiumLocked,
+    addMultiValueGuildConfig,
+    getMultiValueGuildConfig,
+    removeMultiValueGuildConfig
 };
